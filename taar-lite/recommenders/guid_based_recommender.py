@@ -6,7 +6,7 @@ ADDON_LIST_KEY = 'taar-lite/guid-based/coinstalation_frequency_table.json'
 logger = logging.getLogger(__name__)
 
 
-class GuidBasedRecommender():
+class GuidBasedRecommender:
     """ A recommender class that returns top N addons based on a passed addon identifier.
     This will load a json file containing updated top n addons coinstalled with the addon
     passed as an input parameter based on periodically updated  addon-addon coinstallation
@@ -37,7 +37,7 @@ class GuidBasedRecommender():
             return False
 
         # Use a dictionary keyed on the query guid.    
-        if addon_guid not in self.addons_coinstallations.keys()
+        if addon_guid not in self.addons_coinstallations.keys():
             return False
 
         if not self.addons_coinstallations.get(addon_guid):
@@ -51,5 +51,5 @@ class GuidBasedRecommender():
         # TODO: normalize confidence output based on frequncy divided by total
         # frequency sum of all addon installations observed.
 
-# TODO: replace '1.0' with the normalized relative frequency from above
-return [(x, 1.0) for x in result_list]
+        # TODO: replace '1.0' with the normalized relative frequency from above
+        return [(x, 1.0) for x in result_list]
