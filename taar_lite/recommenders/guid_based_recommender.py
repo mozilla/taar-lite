@@ -1,4 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import logging
+from srgutil.interfaces import IS3Data
 
 ADDON_LIST_BUCKET = 'telemetry-parquet'
 ADDON_LIST_KEY = 'taar-lite/guid-based/coinstalation_frequency_table.json'
@@ -15,13 +20,13 @@ class GuidBasedRecommender:
     """
     def __init__(self, ctx):
         self._ctx = ctx
-        assert 'cache' in self._ctx
+        assert IS3Data in self._ctx
         self._init_from_ctx()
 
     def _init_from_ctx(self):
-        cache = self._ctx['cache']
+        cache = self._ctx[IS3Data]
         self.addons_coinstallations = cache.get_s3_json_content(ADDON_LIST_BUCKET,
-                                                               ADDON_LIST_KEY)
+                                                                ADDON_LIST_KEY)
         if self.addons_coinstallations is None:
             logger.error("Cannot download the addon coinstallation file {}".format(ADDON_LIST_KEY))
 

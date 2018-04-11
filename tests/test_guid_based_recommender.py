@@ -1,7 +1,5 @@
 import pytest
-from srgutil import s3data
-from srgutil.context import Context
-from srgutil.base import JSONCache, Clock
+from srgutil.context import default_context
 from taar_lite.recommenders import GuidBasedRecommender
 
 MOCK_DATA = {
@@ -24,11 +22,7 @@ def test_ctx():
     """
     This sets up a basic context for use for testing
     """
-    ctx = Context()
-    ctx['clock'] = Clock()
-    ctx['s3data'] = s3data
-    ctx['cache'] = JSONCache(ctx)
-    return ctx
+    return default_context()
 
 
 def test_recommender(test_ctx):
