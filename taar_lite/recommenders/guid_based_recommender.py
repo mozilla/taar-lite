@@ -6,7 +6,7 @@ import logging
 from srgutil.interfaces import IS3Data
 
 ADDON_LIST_BUCKET = 'telemetry-parquet'
-ADDON_LIST_KEY = 'taar-lite/guid-based/coinstalation_frequency_table.json'
+ADDON_LIST_KEY = 'taar/lite/guid_coinstallation.json'
 
 logger = logging.getLogger(__name__)
 

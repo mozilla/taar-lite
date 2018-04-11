@@ -27,5 +27,8 @@ def test_ctx():
 
 def test_recommender(test_ctx):
     recommender = GuidBasedRecommender(test_ctx)
+
+    # Check that S3 data was loaded
+    assert recommender.addons_coinstallations is not None
     # TODO: do important things here
     print (recommender)
