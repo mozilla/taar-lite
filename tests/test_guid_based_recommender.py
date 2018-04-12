@@ -66,4 +66,9 @@ def test_recommender(test_ctx):
     guid = "{a0f88751-df67-4902-8da4-543cc4ce3d48}"
 
     assert recommender.addons_coinstallations is not None
-    print(recommender.recommend({'guid': guid}, 10))
+    results = recommender.recommend({'guid': guid}, 10)
+    assert 10 == len(results)
+    assert ('uBlock0@raymondhill.net', 2) == results[0]
+
+    # Last entry has weight of 1
+    assert results[-1][1] == 1
