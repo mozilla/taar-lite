@@ -1,7 +1,12 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
+
 import logging
+from srgutil.interfaces import IS3Data
 
 ADDON_LIST_BUCKET = 'telemetry-parquet'
-ADDON_LIST_KEY = 'taar-lite/guid-based/coinstalation_frequency_table.json'
+ADDON_LIST_KEY = 'taar/lite/guid_coinstallation.json'
 
 logger = logging.getLogger(__name__)
 
@@ -15,13 +20,13 @@ class GuidBasedRecommender:
     """
     def __init__(self, ctx):
         self._ctx = ctx
-        assert 'cache' in self._ctx
+        assert IS3Data in self._ctx
         self._init_from_ctx()
 
     def _init_from_ctx(self):
-        cache = self._ctx['cache']
+        cache = self._ctx[IS3Data]
         self.addons_coinstallations = cache.get_s3_json_content(ADDON_LIST_BUCKET,
-                                                               ADDON_LIST_KEY)
+                                                                ADDON_LIST_KEY)
         if self.addons_coinstallations is None:
             logger.error("Cannot download the addon coinstallation file {}".format(ADDON_LIST_KEY))
 
@@ -45,11 +50,18 @@ class GuidBasedRecommender:
 
         return True
 
-    def recommend(self, client_data, limit):
+    def recommend(self, client_data, limit=4):
+        """
+        TAAR lite will yield 4 recommendations for the AMO page
+        """
         addon_guid = client_data.get('guid')
-        result_list = self.addons_coinstallations.get(addon_guid, [])[:limit]
+        result_dict = self.addons_coinstallations.get(addon_guid, {})
+        result_list = list(result_dict.items())
+
+        result_list = sorted(result_list, key=lambda x: x[1], reverse=True)
+
         # TODO: normalize confidence output based on frequncy divided by total
         # frequency sum of all addon installations observed.
-
         # TODO: replace '1.0' with the normalized relative frequency from above
-        return [(x, 1.0) for x in result_list]
+
+        return result_list[:limit]
