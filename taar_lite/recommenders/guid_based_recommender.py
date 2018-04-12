@@ -50,7 +50,10 @@ class GuidBasedRecommender:
 
         return True
 
-    def recommend(self, client_data, limit):
+    def recommend(self, client_data, limit=4):
+        """
+        TAAR lite will yield 4 recommendations for the AMO page
+        """
         addon_guid = client_data.get('guid')
         result_dict = self.addons_coinstallations.get(addon_guid, {})
         result_list = list(result_dict.items())
