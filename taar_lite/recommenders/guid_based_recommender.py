@@ -52,9 +52,13 @@ class GuidBasedRecommender:
 
     def recommend(self, client_data, limit):
         addon_guid = client_data.get('guid')
-        result_list = self.addons_coinstallations.get(addon_guid, [])[:limit]
+        result_dict = self.addons_coinstallations.get(addon_guid, {})
+        result_list = list(result_dict.items())
+
+        result_list = sorted(result_list, key=lambda x: x[1], reverse=True)
+
         # TODO: normalize confidence output based on frequncy divided by total
         # frequency sum of all addon installations observed.
-
         # TODO: replace '1.0' with the normalized relative frequency from above
-        return [(x, 1.0) for x in result_list]
+
+        return result_list[:limit]
