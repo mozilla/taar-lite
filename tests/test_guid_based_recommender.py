@@ -75,7 +75,7 @@ def test_recommender_nonormal(test_ctx):
 
 
 @mock_s3
-def test_uniq_coinstall_recommender(test_ctx):
+def test_row_count_recommender(test_ctx):
     conn = boto3.resource('s3', region_name='us-west-2')
     conn.create_bucket(Bucket=ADDON_LIST_BUCKET)
     conn.Object(ADDON_LIST_BUCKET, ADDON_LIST_KEY)\
@@ -84,7 +84,7 @@ def test_uniq_coinstall_recommender(test_ctx):
     recommender = GuidBasedRecommender(test_ctx)
     guid = "guid-2"
 
-    actual = recommender.recommend({'guid': guid, 'normalize': 'uniq_coinstall'})
+    actual = recommender.recommend({'guid': guid, 'normalize': 'row_count'})
     assert 4 == len(actual)
     # Note that guid-9 is not included because it's weight is
     # decreased 50% to 5
@@ -105,7 +105,7 @@ def test_rowsum_recommender(test_ctx):
     recommender = GuidBasedRecommender(test_ctx)
     guid = "guid-2"
 
-    actual = recommender.recommend({'guid': guid, 'normalize': 'rowsum'})
+    actual = recommender.recommend({'guid': guid, 'normalize': 'row_sum'})
     assert 4 == len(actual)
     assert compare_actual_expected((('guid-1', 50/155), actual[0]))
 

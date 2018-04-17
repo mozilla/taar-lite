@@ -63,7 +63,7 @@ class GuidBasedRecommender:
         # of coinstallation data.
         #
         # This is a map of guid->rows that this guid appears on
-        guid_unique_coinstall = {}
+        row_count = {}
 
         guid_row_norm = {}
 
@@ -78,15 +78,15 @@ class GuidBasedRecommender:
 
                 # Capture the unique number of times a GUID is
                 # coinstalled with other guids
-                guid_unique_coinstall.setdefault(coinstall_guid, 0)
-                guid_unique_coinstall[coinstall_guid] += 1
+                row_count.setdefault(coinstall_guid, 0)
+                row_count[coinstall_guid] += 1
 
                 if coinstall_guid not in guid_row_norm:
                     guid_row_norm[coinstall_guid] = []
                 guid_row_norm[coinstall_guid].append(1.0 * coinstall_count / rowsum)
 
         self._guid_maps = {'count_map': guid_count_map,
-                           'unique_coinstall': guid_unique_coinstall,
+                           'row_count': row_count,
                            'guid_row_norm': guid_row_norm}
 
     def can_recommend(self, client_data):
@@ -115,8 +115,8 @@ class GuidBasedRecommender:
         """
         addon_guid = client_data.get('guid')
         normalize = client_data.get('normalize', None)
-        norm_dict = {'uniq_coinstall': self.norm_uniq_coinstall,
-                     'rowsum': self.norm_rowsum,
+        norm_dict = {'row_count': self.norm_row_count,
+                     'row_sum': self.norm_row_sum,
                      'rownorm_sum': self.norm_rownorm_sum}
 
         if normalize is not None and normalize not in norm_dict.keys():
@@ -135,46 +135,52 @@ class GuidBasedRecommender:
 
         return result_list[:limit]
 
-    def norm_uniq_coinstall(self, key_guid, input_coinstall_dict):
+    def norm_row_count(self, key_guid, input_coinstall_dict):
         """This normalization method counts the unique times that a
         GUID is coinstalled with any other GUID.
 
         This dampens weight of any suggested GUID inversely
         proportional to it's overall popularity.
         """
-        uniq_guid_map = self._guid_maps['unique_coinstall']
+        uniq_guid_map = self._guid_maps['row_count']
 
         output_result_dict = {}
         for result_guid, result_count in input_coinstall_dict.items():
             output_result_dict[result_guid] = 1.0 * result_count / uniq_guid_map[result_guid]
         return output_result_dict
 
-    def norm_rowsum(self, key_guid, input_coinstall_dict):
+    def norm_row_sum(self, key_guid, input_coinstall_dict):
         """This normalization normalizes the weights for the suggested
         coinstallation GUIDs based on the sum of the weights for the
         coinstallation GUIDs given a key GUID.
         """
         guid_count_map = self._guid_maps['count_map']
-        return dict([(k, v*1.0/guid_count_map[k])
-                    for k, v
-                    in input_coinstall_dict.items()])
+
+        def generate_row_sum_list():
+            for guid, guid_weight in input_coinstall_dict.items():
+                norm_guid_weight = guid_weight * 1.0 / guid_count_map[guid]
+                yield guid, norm_guid_weight
+
+        return dict(generate_row_sum_list())
 
     def norm_rownorm_sum(self, key_guid, input_coinstall_dict):
-        """This normalization is the same as norm_rowsum, but we also
-        divide the dampen by the total number of coinstallations.
+        """This normalization is the same as norm_row_sum, but we also
+        divide the result by the sum of
+        (addon coinstall instances)/(addon coinstall total instances)
+
+        The testcase for this scenario lays out the math more
+        explicitly.
         """
 
-        # Compute an intermediary dictionary that is the result dict
-        # normalizing each coinstalled GUID by it's occurance in the
-        # entire space
+        # Compute an intermediary dictionary that is a row normalized
+        # co-install. That is - each coinstalled guid weight is
+        # divided by the sum of the weights for all coinstalled guids
+        # on this row.
         tmp_dict = {}
 
         coinstall_total_weight = sum(input_coinstall_dict.values())
         for coinstall_guid, coinstall_weight in input_coinstall_dict.items():
             tmp_dict[coinstall_guid] = coinstall_weight / coinstall_total_weight
-
-        # This is an inverted index of all GUIDs that reference the
-        # key_guid
 
         guid_row_norm = self._guid_maps['guid_row_norm']
 
