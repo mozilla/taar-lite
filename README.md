@@ -9,7 +9,7 @@ Table of Contents (ToC):
 * [Building and Running tests](#build-and-run-tests)
 
 ## How does it work?
-Each specific deployment recommendation strategy is implemented through this repo, usually accessible via [taar-lite-api](https://github.com/mozilla/taar-lite-api). 
+Each specific deployment recommendation strategy is implemented through this repo, usually accessible via [taar-api-lite](https://github.com/mozilla/taar-api-lite). 
 The individual use cases reply on modelling perfromed via use-case-specific ETL jobs hosted in [python_mozetl](https://github.com/mozilla/python_mozetl) which leverage the [Telemetry](https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/telemetry/data/common-ping.html), 
 data corpora to drive a set fo recommendation choices.
 
