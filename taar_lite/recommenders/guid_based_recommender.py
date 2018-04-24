@@ -2,13 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import logging
-from srgutil.interfaces import IS3Data
+from srgutil.interfaces import IS3Data, IMozLogging
 
 ADDON_LIST_BUCKET = 'telemetry-parquet'
 ADDON_LIST_KEY = 'taar/lite/guid_coinstallation.json'
-
-logger = logging.getLogger(__name__)
 
 
 class GuidBasedRecommender:
@@ -43,14 +40,16 @@ class GuidBasedRecommender:
 
     def _init_from_ctx(self):
         cache = self._ctx[IS3Data]
+        self.logger = self._ctx[IMozLogging]
+
         self._addons_coinstallations = cache.get_s3_json_content(ADDON_LIST_BUCKET,
                                                                  ADDON_LIST_KEY)
         if self._addons_coinstallations is None:
-            logger.error("Cannot download the addon coinstallation file {}".format(ADDON_LIST_KEY))
+            self.logger.error("Cannot download the addon coinstallation file {}".format(ADDON_LIST_KEY))
 
     def _precompute_normalization(self):
         if self._addons_coinstallations is None:
-            logger.error("Cannot find addon coinstallations to normalize.")
+            self.logger.error("Cannot find addon coinstallations to normalize.")
             return
 
         # Capture the total number of times that a guid was
@@ -122,7 +121,7 @@ class GuidBasedRecommender:
         if normalize is not None and normalize not in norm_dict.keys():
             # Yield no results if the normalization method is not
             # specified
-            logger.warn("Invalid normalization parameter detected: [%s]" % normalize)
+            self.logger.warn("Invalid normalization parameter detected: [%s]" % normalize)
             return []
 
         result_dict = self._addons_coinstallations.get(addon_guid, {})
