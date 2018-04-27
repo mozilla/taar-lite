@@ -43,7 +43,7 @@ class GuidBasedRecommender:
 
     def _init_from_ctx(self):
         cache = self._ctx[IS3Data]
-        self.logger = self._ctx[IMozLogging]
+        self.logger = self._ctx[IMozLogging].get_logger('taarlite')
 
         self._addons_coinstallations = cache.get_s3_json_content(ADDON_LIST_BUCKET,
                                                                  ADDON_LIST_KEY)
