@@ -32,6 +32,9 @@ class GuidBasedRecommender:
     _addons_coinstallations = None
     _guid_maps = {}
 
+    # Define recursion levels for guid-ception
+    RECURSION_LEVELS = 3
+
     def __init__(self, ctx):
         self._ctx = ctx
         assert IS3Data in self._ctx
@@ -40,7 +43,7 @@ class GuidBasedRecommender:
 
     def _init_from_ctx(self):
         cache = self._ctx[IS3Data]
-        self.logger = self._ctx[IMozLogging]
+        self.logger = self._ctx[IMozLogging].get_logger('taarlite')
 
         self._addons_coinstallations = cache.get_s3_json_content(ADDON_LIST_BUCKET,
                                                                  ADDON_LIST_KEY)
@@ -113,10 +116,14 @@ class GuidBasedRecommender:
         TAAR lite will yield 4 recommendations for the AMO page
         """
         addon_guid = client_data.get('guid')
-        normalize = client_data.get('normalize', None)
-        norm_dict = {'row_count': self.norm_row_count,
+
+        normalize = client_data.get('normalize', 'none')
+
+        norm_dict = {'none': lambda guid, x: x,
+                     'row_count': self.norm_row_count,
                      'row_sum': self.norm_row_sum,
-                     'rownorm_sum': self.norm_rownorm_sum}
+                     'rownorm_sum': self.norm_rownorm_sum,
+                     'guidception': self.norm_guidception}
 
         if normalize is not None and normalize not in norm_dict.keys():
             # Yield no results if the normalization method is not
@@ -124,12 +131,16 @@ class GuidBasedRecommender:
             self.logger.warn("Invalid normalization parameter detected: [%s]" % normalize)
             return []
 
+        # Bind the normalization method
+        norm_method = norm_dict[normalize]
+
+        # Get the raw co-installation result dictionary
         result_dict = self._addons_coinstallations.get(addon_guid, {})
 
-        # Default the normalization method to no normalization
-        norm_method = norm_dict.get(normalize, lambda guid, x: x)
+        # Apply normalization
         result_dict = norm_method(addon_guid, result_dict)
 
+        # Sort the result dictionary in descending order by weight
         result_list = sorted(result_dict.items(), key=lambda x: x[1], reverse=True)
 
         return result_list[:limit]
@@ -170,16 +181,7 @@ class GuidBasedRecommender:
         The testcase for this scenario lays out the math more
         explicitly.
         """
-
-        # Compute an intermediary dictionary that is a row normalized
-        # co-install. That is - each coinstalled guid weight is
-        # divided by the sum of the weights for all coinstalled guids
-        # on this row.
-        tmp_dict = {}
-
-        coinstall_total_weight = sum(input_coinstall_dict.values())
-        for coinstall_guid, coinstall_weight in input_coinstall_dict.items():
-            tmp_dict[coinstall_guid] = coinstall_weight / coinstall_total_weight
+        tmp_dict = self._normalize_row_weights(input_coinstall_dict)
 
         guid_row_norm = self._guid_maps['guid_row_norm']
 
@@ -188,3 +190,59 @@ class GuidBasedRecommender:
             output_dict[output_guid] = output_guid_weight / sum(guid_row_norm[output_guid])
 
         return output_dict
+
+    def norm_guidception(self, key_guid, input_coinstall_dict):
+        tmp_dict = self._normalize_row_weights(input_coinstall_dict)
+
+        return self._compute_recursive_results(tmp_dict, self.RECURSION_LEVELS)
+
+    def _normalize_row_weights(self, coinstall_dict):
+        # Compute an intermediary dictionary that is a row normalized
+        # co-install. That is - each coinstalled guid weight is
+        # divided by the sum of the weights for all coinstalled guids
+        # on this row.
+        tmp_dict = {}
+        coinstall_total_weight = sum(coinstall_dict.values())
+        for coinstall_guid, coinstall_weight in coinstall_dict.items():
+            tmp_dict[coinstall_guid] = coinstall_weight / coinstall_total_weight
+        return tmp_dict
+
+    def _recursion_penalty(self, level):
+        """ Return a factor to apply to the weight for a guid
+        recommendation.
+        """
+        dampener = 1.0 - (1.0 * (self.RECURSION_LEVELS - level) / self.RECURSION_LEVELS)
+        dampener *= dampener
+        return dampener
+
+    def _compute_recursive_results(self, row_normalized_coinstall, level):
+        if level <= 0:
+            return row_normalized_coinstall
+
+        # consolidated_coinstall_dict will capture values
+        consolidated_coinstall_dict = {}
+
+        # Add this level's guid weight to the consolidated result
+        dampener = self._recursion_penalty(level)
+        for recommendation_guid, recommendation_guid_weight in row_normalized_coinstall.items():
+            for guid, guid_weight in row_normalized_coinstall.items():
+                weight = consolidated_coinstall_dict.get(guid, 0)
+                weight += (dampener*guid_weight)
+                consolidated_coinstall_dict[guid] = weight
+
+        # Add in the next level
+        level -= 1
+        for guid in consolidated_coinstall_dict.keys():
+            next_level_coinstalls = self._addons_coinstallations.get(guid, {})
+            if next_level_coinstalls != {}:
+                # Normalize the next bunch of suggestions
+                next_level_coinstalls = self._normalize_row_weights(next_level_coinstalls)
+
+                next_level_results = self._compute_recursive_results(next_level_coinstalls, level)
+                for next_level_guid, next_level_weight in next_level_results.items():
+                    weight = consolidated_coinstall_dict.get(guid, 0)
+                    weight += next_level_weight
+                    consolidated_coinstall_dict[guid] = weight
+
+        # normalize the final results
+        return self._normalize_row_weights(consolidated_coinstall_dict)
