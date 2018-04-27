@@ -1,0 +1,20 @@
+language: python
+
+matrix:
+  include:
+  - python: "3.6"
+
+before_install:
+# Work around https://github.com/travis-ci/travis-ci/issues/7940
+- export BOTO_CONFIG=/dev/null  
+
+install:
+# Update Travis
+- sudo apt-get update
+
+# Setup environment
+- pip install -r test_requirements.txt
+
+script:
+- flake8 taar_lite tests || exit 1  # Fail if flake8 fails
+- py.test --cov taar_lite tests
