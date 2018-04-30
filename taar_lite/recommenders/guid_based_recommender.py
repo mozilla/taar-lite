@@ -48,7 +48,8 @@ class GuidBasedRecommender:
         self._addons_coinstallations = cache.get_s3_json_content(ADDON_LIST_BUCKET,
                                                                  ADDON_LIST_KEY)
         if self._addons_coinstallations is None:
-            self.logger.error("Cannot download the addon coinstallation file {}".format(ADDON_LIST_KEY))
+            msg = "Cannot download addon coinstallation file {}".format(ADDON_LIST_KEY)
+            self.logger.error(msg)
 
     def _precompute_normalization(self):
         if self._addons_coinstallations is None:
