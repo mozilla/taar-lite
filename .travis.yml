@@ -13,6 +13,8 @@ install:
 - sudo apt-get update
 
 # Setup environment
+- pip install .
+- pip install -r requirements.txt
 - pip install -r test_requirements.txt
 
 script:
