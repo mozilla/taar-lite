@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mozilla/taar-lite.svg?branch=master)](https://travis-ci.org/mozilla/taar-lite)
+
 # Taar-lite
 A lightweight version of the [TAAR](https://github.com/mozilla/taar) service intended for specific deployments where a reduced feature space is available for the recommendation of addons.
 
