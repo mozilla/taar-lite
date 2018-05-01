@@ -32,7 +32,7 @@ def MOCK_DATA():
 
 
 @pytest.fixture
-def test_ctx():
+def default_ctx():
     """
     This sets up a basic context for use for testing
     """

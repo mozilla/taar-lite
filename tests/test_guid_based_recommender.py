@@ -61,11 +61,11 @@ def compare_actual_expected(inputs):
 
 
 @mock_s3
-def test_recommender_nonormal(test_ctx, MOCK_DATA):
+def test_recommender_nonormal(default_ctx, MOCK_DATA):
     EXPECTED_RESULTS = RESULTS['default']
     install_mock_data(MOCK_DATA)
 
-    recommender = GuidBasedRecommender(test_ctx)
+    recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-1"
 
     actual = recommender.recommend({'guid': guid})
@@ -73,11 +73,11 @@ def test_recommender_nonormal(test_ctx, MOCK_DATA):
 
 
 @mock_s3
-def test_row_count_recommender(test_ctx, MOCK_DATA):
+def test_row_count_recommender(default_ctx, MOCK_DATA):
     EXPECTED_RESULTS = RESULTS['row_count']
     install_mock_data(MOCK_DATA)
 
-    recommender = GuidBasedRecommender(test_ctx)
+    recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
 
     actual = recommender.recommend({'guid': guid, 'normalize': 'row_count'})
@@ -88,11 +88,11 @@ def test_row_count_recommender(test_ctx, MOCK_DATA):
 
 
 @mock_s3
-def test_rownorm_sumrownorm(test_ctx, MOCK_DATA):
+def test_rownorm_sumrownorm(default_ctx, MOCK_DATA):
     EXPECTED_RESULTS = RESULTS['rownorm_sum']
     install_mock_data(MOCK_DATA)
 
-    recommender = GuidBasedRecommender(test_ctx)
+    recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
 
     actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'})
@@ -118,11 +118,11 @@ def test_rownorm_sumrownorm(test_ctx, MOCK_DATA):
 
 
 @mock_s3
-def test_rowsum_recommender(test_ctx, MOCK_DATA):
+def test_rowsum_recommender(default_ctx, MOCK_DATA):
     EXPECTED_RESULTS = RESULTS['row_sum']
     install_mock_data(MOCK_DATA)
 
-    recommender = GuidBasedRecommender(test_ctx)
+    recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
 
     actual = recommender.recommend({'guid': guid, 'normalize': 'row_sum'})
@@ -132,11 +132,11 @@ def test_rowsum_recommender(test_ctx, MOCK_DATA):
 
 
 @mock_s3
-def test_guidception(test_ctx, MOCK_DATA):
+def test_guidception(default_ctx, MOCK_DATA):
     EXPECTED_RESULTS = RESULTS['guidception']
     install_mock_data(MOCK_DATA)
 
-    recommender = GuidBasedRecommender(test_ctx)
+    recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
 
     actual = recommender.recommend({'guid': guid, 'normalize': 'guidception'})
