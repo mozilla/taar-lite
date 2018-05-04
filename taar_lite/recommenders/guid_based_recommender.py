@@ -8,6 +8,12 @@ ADDON_LIST_BUCKET = 'telemetry-parquet'
 ADDON_LIST_KEY = 'taar/lite/guid_coinstallation.json'
 
 
+NORM_MODE_ROWNORMSUM = 'rownorm_sum'
+NORM_MODE_ROWCOUNT = 'row_count'
+NORM_MODE_ROWSUM = 'row_sum'
+NORM_MODE_GUIDCEPTION = 'guidception'
+
+
 class GuidBasedRecommender:
     """ A recommender class that returns top N addons based on a passed addon identifier.
     This will load a json file containing updated top n addons coinstalled with the addon
@@ -118,13 +124,13 @@ class GuidBasedRecommender:
         """
         addon_guid = client_data.get('guid')
 
-        normalize = client_data.get('normalize', 'none')
+        normalize = client_data.get('normalize', NORM_MODE_ROWNORMSUM)
 
         norm_dict = {'none': lambda guid, x: x,
-                     'row_count': self.norm_row_count,
-                     'row_sum': self.norm_row_sum,
-                     'rownorm_sum': self.norm_rownorm_sum,
-                     'guidception': self.norm_guidception}
+                     NORM_MODE_ROWCOUNT: self.norm_row_count,
+                     NORM_MODE_ROWSUM: self.norm_row_sum,
+                     NORM_MODE_ROWNORMSUM: self.norm_rownorm_sum,
+                     NORM_MODE_GUIDCEPTION: self.norm_guidception}
 
         if normalize is not None and normalize not in norm_dict.keys():
             # Yield no results if the normalization method is not
