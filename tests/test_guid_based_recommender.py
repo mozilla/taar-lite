@@ -68,7 +68,7 @@ def test_recommender_nonormal(default_ctx, MOCK_DATA):
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-1"
 
-    actual = recommender.recommend({'guid': guid})
+    actual = recommender.recommend({'guid': guid, 'normalize': 'none'})
     assert actual == EXPECTED_RESULTS
 
 
@@ -95,7 +95,13 @@ def test_rownorm_sumrownorm(default_ctx, MOCK_DATA):
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
 
+    default_actual = recommender.recommend({'guid': guid})
+
     actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'})
+
+    # Default normalization is rownorm_sum
+    assert actual == default_actual
+
     assert actual == EXPECTED_RESULTS
     """
     Some notes on verifying guid-1:
