@@ -5,7 +5,9 @@ import boto3
 import pytest
 
 from taar_lite.recommenders import GuidBasedRecommender
-from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_BUCKET, ADDON_LIST_KEY
+from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_BUCKET
+from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_KEY
+from taar_lite.recommenders.guid_based_recommender import GUID_RANKING_KEY
 
 # The different kinds of results we can expect from TAARlite are
 # listed below.  Note that the ordering of GUIDs returned, and even
@@ -17,53 +19,49 @@ from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_BUCKET, ADD
 # other normalization modes including no normalization.
 
 RESULTS = {
-    'default': [('guid-2', 1000),
-                ('guid-3', 100),
-                ('guid-4', 10),
-                ('guid-5', 1)],
-    'row_count': [('guid-3', 20.0),  # 50% of 40
-                  ('guid-1', 16.666666666666668),  # 1/3 of 50
-                  ('guid-8', 15.0),  # 50% of 30
-                  ('guid-4', 6.666666666666667)],  # 1/3 of 20
-    'rownorm_sum': [('guid-3', 0.7478143913920645),
-                    ('guid-1', 0.4035916824196597),
-                    ('guid-8', 0.3788819875776398),
-                    ('guid-4', 0.2803125787748929)],
-    'row_sum': [('guid-1', 0.3225806451612903),
-                ('guid-3', 0.2857142857142857), ('guid-8', 0.23076923076923078),
-                ('guid-4', 0.2)],
-    'guidception': [('guid-1', 0.2666666666666667),
-                    ('guid-3', 0.23333333333333334),
-                    ('guid-8', 0.2),
-                    ('guid-4', 0.16666666666666666)]
+    'default': [('guid-2', '000001000.0000000000.0000000009'),
+                ('guid-3', '000000100.0000000000.0000000008'),
+                ('guid-4', '000000010.0000000000.0000000007'),
+                ('guid-5', '000000001.0000000000.0000000006')],
+    'row_count': [('guid-3', '000000020.0000000000.0000000008'),   # 50% of 40
+                  ('guid-1', '000000016.6666666667.0000000010'),  # 1/3 of 50
+                  ('guid-8', '000000015.0000000000.0000000003'),  # 50% of 30
+                  ('guid-4', '000000006.6666666667.0000000007')],  # 1/3 of 20
+    'rownorm_sum': [('guid-3', '000000000.7478143914.0000000008'),
+                    ('guid-1', '000000000.4035916824.0000000010'),
+                    ('guid-8', '000000000.3788819876.0000000003'),
+                    ('guid-4', '000000000.2803125788.0000000007')],
+    'rownorm_sum_tiebreak': [('guid-1', '000000000.2500000000.0000000010'),
+                             ('guid-3', '000000000.2500000000.0000000008'),
+                             ('guid-4', '000000000.2500000000.0000000007'),
+                             ('guid-5', '000000000.2500000000.0000000006')],
+    'row_sum': [('guid-1', '000000000.3225806452.0000000010'),
+                ('guid-3', '000000000.2857142857.0000000008'),
+                ('guid-8', '000000000.2307692308.0000000003'),
+                ('guid-4', '000000000.2000000000.0000000007')],
+    'guidception': [('guid-1', '000000000.2666666667.0000000010'),
+                    ('guid-3', '000000000.2333333333.0000000008'),
+                    ('guid-8', '000000000.2000000000.0000000003'),
+                    ('guid-4', '000000000.1666666667.0000000007')]
 }
 
 
-def install_mock_data(MOCK_DATA):
+def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING):
+
     conn = boto3.resource('s3', region_name='us-west-2')
+
     conn.create_bucket(Bucket=ADDON_LIST_BUCKET)
+
     conn.Object(ADDON_LIST_BUCKET, ADDON_LIST_KEY)\
         .put(Body=json.dumps(MOCK_DATA))
-
-
-def compare_actual_expected(inputs):
-    """
-    Compare two 2-tuples where the first element is a guid, and the
-    second is a float.
-
-    ex: compare_actual_expected(('guid-1': 0.111111111), ('guid-1', 0.111))
-    will yield True
-    """
-    (actual_tuple, expected_tuple) = inputs
-    assert len(actual_tuple) == len(expected_tuple) == 2
-    assert actual_tuple[1] == pytest.approx(expected_tuple[1], rel=1e-3)
-    return True
+    conn.Object(ADDON_LIST_BUCKET, GUID_RANKING_KEY)\
+        .put(Body=json.dumps(MOCK_GUID_RANKING))
 
 
 @mock_s3
-def test_recommender_nonormal(default_ctx, MOCK_DATA):
+def test_recommender_nonormal(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['default']
-    install_mock_data(MOCK_DATA)
+    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
 
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-1"
@@ -73,9 +71,9 @@ def test_recommender_nonormal(default_ctx, MOCK_DATA):
 
 
 @mock_s3
-def test_row_count_recommender(default_ctx, MOCK_DATA):
+def test_row_count_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['row_count']
-    install_mock_data(MOCK_DATA)
+    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
 
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
@@ -88,9 +86,9 @@ def test_row_count_recommender(default_ctx, MOCK_DATA):
 
 
 @mock_s3
-def test_rownorm_sumrownorm(default_ctx, MOCK_DATA):
+def test_rownorm_sumrownorm(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['rownorm_sum']
-    install_mock_data(MOCK_DATA)
+    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
 
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
@@ -101,7 +99,6 @@ def test_rownorm_sumrownorm(default_ctx, MOCK_DATA):
 
     # Default normalization is rownorm_sum
     assert actual == default_actual
-
     assert actual == EXPECTED_RESULTS
     """
     Some notes on verifying guid-1:
@@ -119,31 +116,51 @@ def test_rownorm_sumrownorm(default_ctx, MOCK_DATA):
 
     That gives a final expected weight for guid-1 to be: 0.403591682
     """
-    expected = ('guid-1', 0.403591682)
-    assert compare_actual_expected((actual[1], expected))
+    expected = 0.403591682
+    actual = float(actual[1][1][:-11])
+    assert expected == pytest.approx(actual, rel=1e-3)
 
 
 @mock_s3
-def test_rowsum_recommender(default_ctx, MOCK_DATA):
+def test_rowsum_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['row_sum']
-    install_mock_data(MOCK_DATA)
+    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
 
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
 
     actual = recommender.recommend({'guid': guid, 'normalize': 'row_sum'})
     assert 4 == len(actual)
-    assert compare_actual_expected((('guid-1', 50/155), actual[0]))
+
+    expected_val = 50/155
+    actual_val = float(actual[0][1][:-11])
+    assert expected_val == pytest.approx(actual_val, rel=1e-3)
+
     assert actual == EXPECTED_RESULTS
 
 
 @mock_s3
-def test_guidception(default_ctx, MOCK_DATA):
+def test_guidception(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['guidception']
-    install_mock_data(MOCK_DATA)
+    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
 
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
 
     actual = recommender.recommend({'guid': guid, 'normalize': 'guidception'})
+    assert actual == EXPECTED_RESULTS
+
+
+@mock_s3
+def test_rownorm_sum_tiebreak(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
+    EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak']
+    install_mock_data(TIE_MOCK_DATA, MOCK_GUID_RANKING)
+
+    recommender = GuidBasedRecommender(default_ctx)
+    guid = "guid-2"
+
+    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'})
+
+    # Note that the results have weights that are equal, but the tie
+    # break is solved by the install rate
     assert actual == EXPECTED_RESULTS
