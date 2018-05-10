@@ -30,33 +30,25 @@ def compute_name(guid, addon_data):
 output = {}
 for guid in addon_whitelist.keys():
     addon_data = addon_whitelist.get(guid, None)
+    addon_url = addon_data['url']
     addon_name = compute_name(guid, addon_data)
 
-    recommendations = [x[0] for x in grec.recommend({'guid': guid}, limit=10)]
-    if len(recommendations) == 4:
-        suggestions = []
-        for rec_guid in recommendations:
-            rec_data = addon_whitelist.get(rec_guid, None)
-            if rec_data is None:
-                # A recommendation generated a non-whitelisted addon.
-                # This shouldn't happen in production, but taar-lite
-                # has a bug in dev where the guid_coinstallation.json
-                # file was generated before we added filtering for
-                # legacy add-ons.
-                #
-                # In this case, just skip this recommendation
-                continue
-            rec_name = compute_name(rec_guid, rec_data)
-            suggestions.append({'recommendation_name': rec_name, 'recommendation_guid': rec_guid})
+    recommendations = [x[0] for x in grec.recommend({'guid': guid}, limit=50)]
 
-        # Strip down the suggestions to length 4 to work around the
-        # coinstallation json bug
-        suggestions = suggestions[:4]
+    suggestions = []
+    for rec_guid in recommendations:
+        rec_data = addon_whitelist[rec_guid]
+        rec_name = compute_name(rec_guid, rec_data)
+        rec_url = rec_data['url']
+        suggestions.append({'recommendation_name': rec_name,
+                            'recommendation_url': rec_url,
+                            'recommendation_guid': rec_guid})
 
-        if len(suggestions) == 4:
-            output[guid] = {'name': addon_name,
-                            'suggestions': suggestions}
-        else:
-            print("Skipping {0}-{1} because of coinstallation bug".format(guid, addon_name))
+    # Strip down the suggestions to length 4 to work around the
+    # coinstallation json bug
+    suggestions = suggestions[:4]
+
+    if len(suggestions) == 4:
+        output[addon_url] = {'addon_name': addon_name, 'suggestions': suggestions}
 
 json.dump(output, open('/tmp/taarlite_pregenerated.json', 'w'), indent=2)
