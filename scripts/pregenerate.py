@@ -30,6 +30,7 @@ def compute_name(guid, addon_data):
 output = {}
 for guid in addon_whitelist.keys():
     addon_data = addon_whitelist.get(guid, None)
+    addon_url = addon_data['url']
     addon_name = compute_name(guid, addon_data)
 
     recommendations = [x[0] for x in grec.recommend({'guid': guid}, limit=10)]
@@ -47,15 +48,17 @@ for guid in addon_whitelist.keys():
                 # In this case, just skip this recommendation
                 continue
             rec_name = compute_name(rec_guid, rec_data)
-            suggestions.append({'recommendation_name': rec_name, 'recommendation_guid': rec_guid})
+            rec_url = rec_data['url']
+            suggestions.append({'recommendation_name': rec_name,
+                                'recommendation_url': rec_url,
+                                'recommendation_guid': rec_guid})
 
         # Strip down the suggestions to length 4 to work around the
         # coinstallation json bug
         suggestions = suggestions[:4]
 
         if len(suggestions) == 4:
-            output[guid] = {'name': addon_name,
-                            'suggestions': suggestions}
+            output[addon_url] = {'addon_name': addon_name, 'suggestions': suggestions}
         else:
             print("Skipping {0}-{1} because of coinstallation bug".format(guid, addon_name))
 
