@@ -152,7 +152,12 @@ class GuidBasedRecommender:
         tmp_result_dict = norm_method(addon_guid, result_dict)
 
         # Augment the result_dict with the installation counts
-        # and then we can sort better
+        # and then we can sort using lexical sorting of strings.
+        # The idea here is to get something in the form of
+        #    0000.0000.0000
+        # The computed weight takes the first and second segments of
+        # integers.  The third segment is the installation count of
+        # the addon but is zero padded.
         result_dict = {}
         for k, v in tmp_result_dict.items():
             lex_value = "{0:020.10f}.{1:010d}".format(v, self._guid_rankings.get(k, 0))

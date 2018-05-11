@@ -18,6 +18,17 @@ from taar_lite.recommenders.guid_based_recommender import GUID_RANKING_KEY
 # method appears to provide qualitatively better results than the
 # other normalization modes including no normalization.
 
+
+# Reading the RESULTS is not entirely obvious.  The recommendation
+# list consists of 2-tuples containing a guid, followed by a lexically
+# sorted weight+install count.
+# The weights are formatted as a fixed with zero padded float, with
+# an addition suffix of a decimal and a zero padded instllation count
+# for the addon.
+#
+# The clearest example of this is the 'rownorm_sum_tiebreak' results
+# where each of the computed weights are the same (0.25), but the
+# installation count varies.
 RESULTS = {
     'default': [('guid-2', '000001000.0000000000.0000000009'),
                 ('guid-3', '000000100.0000000000.0000000008'),
@@ -162,5 +173,5 @@ def test_rownorm_sum_tiebreak(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
     actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'})
 
     # Note that the results have weights that are equal, but the tie
-    # break is solved by the install rate
+    # break is solved by the install rate.
     assert actual == EXPECTED_RESULTS
