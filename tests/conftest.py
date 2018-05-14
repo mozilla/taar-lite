@@ -32,6 +32,44 @@ def MOCK_DATA():
 
 
 @pytest.fixture
+def TIE_MOCK_DATA():
+    return {"guid-1": {'guid-2': 100,
+                       'guid-3': 100,
+                       'guid-4': 100,
+                       'guid-5': 100},
+            'guid-2': {'guid-1': 100,
+                       'guid-3': 100,
+                       'guid-4': 100,
+                       'guid-5': 100},
+            'guid-3': {'guid-1': 100,
+                       'guid-2': 100,
+                       'guid-4': 100,
+                       'guid-5': 100},
+            'guid-4': {'guid-1': 20,
+                       'guid-2': 20,
+                       'guid-3': 20,
+                       'guid-5': 20},
+            'guid-5': {'guid-1': 20,
+                       'guid-2': 20,
+                       'guid-3': 20,
+                       'guid-4': 20},
+            }
+
+
+@pytest.fixture
+def MOCK_GUID_RANKING():
+    return {"guid-1": 10,
+            'guid-2': 9,
+            'guid-3': 8,
+            'guid-4': 7,
+            'guid-5': 6,
+            "guid-6": 5,
+            'guid-7': 4,
+            'guid-8': 3,
+            'guid-9': 2}
+
+
+@pytest.fixture
 def default_ctx():
     """
     This sets up a basic context for use for testing

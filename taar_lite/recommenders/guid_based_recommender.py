@@ -6,6 +6,7 @@ from srgutil.interfaces import IS3Data, IMozLogging
 
 ADDON_LIST_BUCKET = 'telemetry-parquet'
 ADDON_LIST_KEY = 'taar/lite/guid_coinstallation.json'
+GUID_RANKING_KEY = 'taar/lite/guid_install_ranking.json'
 
 
 NORM_MODE_ROWNORMSUM = 'rownorm_sum'
@@ -53,6 +54,9 @@ class GuidBasedRecommender:
 
         self._addons_coinstallations = cache.get_s3_json_content(ADDON_LIST_BUCKET,
                                                                  ADDON_LIST_KEY)
+
+        self._guid_rankings = cache.get_s3_json_content(ADDON_LIST_BUCKET,
+                                                        GUID_RANKING_KEY)
         if self._addons_coinstallations is None:
             msg = "Cannot download addon coinstallation file {}".format(ADDON_LIST_KEY)
             self.logger.error(msg)
@@ -145,7 +149,19 @@ class GuidBasedRecommender:
         result_dict = self._addons_coinstallations.get(addon_guid, {})
 
         # Apply normalization
-        result_dict = norm_method(addon_guid, result_dict)
+        tmp_result_dict = norm_method(addon_guid, result_dict)
+
+        # Augment the result_dict with the installation counts
+        # and then we can sort using lexical sorting of strings.
+        # The idea here is to get something in the form of
+        #    0000.0000.0000
+        # The computed weight takes the first and second segments of
+        # integers.  The third segment is the installation count of
+        # the addon but is zero padded.
+        result_dict = {}
+        for k, v in tmp_result_dict.items():
+            lex_value = "{0:020.10f}.{1:010d}".format(v, self._guid_rankings.get(k, 0))
+            result_dict[k] = lex_value
 
         # Sort the result dictionary in descending order by weight
         result_list = sorted(result_dict.items(), key=lambda x: x[1], reverse=True)
