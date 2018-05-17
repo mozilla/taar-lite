@@ -1,6 +1,8 @@
 from moto import mock_s3
 import boto3
-from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_BUCKET, ADDON_LIST_KEY, GUID_RANKING_KEY
+from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_BUCKET
+from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_KEY
+from taar_lite.recommenders.guid_based_recommender import GUID_RANKING_KEY
 import json
 from taar_lite.recommenders import GuidBasedRecommender
 
