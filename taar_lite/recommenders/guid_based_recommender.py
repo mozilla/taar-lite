@@ -3,6 +3,7 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from srgutil.interfaces import IS3Data, IMozLogging
+import numpy as np
 
 ADDON_LIST_BUCKET = 'telemetry-parquet'
 ADDON_LIST_KEY = 'taar/lite/guid_coinstallation.json'
@@ -60,6 +61,10 @@ class GuidBasedRecommender:
         if self._addons_coinstallations is None:
             msg = "Cannot download addon coinstallation file {}".format(ADDON_LIST_KEY)
             self.logger.error(msg)
+
+        # Compute the floor install incidence that recommended addons
+        # must satisfy.  Take 5% of the mean of all installed addons.
+        self._min_installs = np.mean(list(self._guid_rankings.values())) * 0.05
 
     def _precompute_normalization(self):
         if self._addons_coinstallations is None:
@@ -147,6 +152,17 @@ class GuidBasedRecommender:
 
         # Get the raw co-installation result dictionary
         result_dict = self._addons_coinstallations.get(addon_guid, {})
+
+        # Collect addon GUIDs where the install incidence is below a
+        # floor incidence.
+        removal_keys = []
+        for k, v in result_dict.items():
+            if self._guid_rankings.get(k, 0) < self._min_installs:
+                removal_keys.append(k)
+
+        # Remove the collected addons that are not installed enough
+        for k in removal_keys:
+            del result_dict[k]
 
         # Apply normalization
         tmp_result_dict = norm_method(addon_guid, result_dict)
