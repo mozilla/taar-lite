@@ -164,6 +164,10 @@ class GuidBasedRecommender:
             if self._guid_rankings.get(k, 0) < self._min_installs:
                 removal_keys.append(k)
 
+        # Warn if the minimum number of installs drops below 100.
+        if self._min_installs < 100:
+            self.logger.warn("minimum installs threshold low: [%s]" % self._min_installs)
+
         # Remove the collected addons that are not installed enough
         for k in removal_keys:
             del result_dict[k]
