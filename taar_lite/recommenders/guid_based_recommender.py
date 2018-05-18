@@ -66,6 +66,10 @@ class GuidBasedRecommender:
         # must satisfy.  Take 5% of the mean of all installed addons.
         self._min_installs = np.mean(list(self._guid_rankings.values())) * 0.05
 
+        # Warn if the minimum number of installs drops below 100.
+        if self._min_installs < 100:
+            self.logger.warn("minimum installs threshold low: [%s]" % self._min_installs)
+
     def _precompute_normalization(self):
         if self._addons_coinstallations is None:
             self.logger.error("Cannot find addon coinstallations to normalize.")
