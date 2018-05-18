@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name='mozilla-taarlite',
     use_scm_version=False,
-    version='0.1.7',
+    version='0.1.8',
     setup_requires=['setuptools_scm', 'pytest-runner'],
     tests_require=['pytest'],
     include_package_data=True,
