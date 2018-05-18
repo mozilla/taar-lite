@@ -186,6 +186,9 @@ class GuidBasedRecommender:
         # Sort the result dictionary in descending order by weight
         result_list = sorted(result_dict.items(), key=lambda x: x[1], reverse=True)
 
+        log_data = ([str(r) for r in result_list[:limit]])
+        self.logger.info("recommender_triggered, guids: [%s]" % log_data)
+
         return result_list[:limit]
 
     def norm_row_count(self, key_guid, input_coinstall_dict):
