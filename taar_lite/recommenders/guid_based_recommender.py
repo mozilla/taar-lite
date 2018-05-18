@@ -49,6 +49,8 @@ class GuidBasedRecommender:
         self._init_from_ctx()
         self._precompute_normalization()
 
+        self.logger.info("GUIDBasedRecommender is initialized")
+
     def _init_from_ctx(self):
         cache = self._ctx[IS3Data]
         self.logger = self._ctx[IMozLogging].get_logger('taarlite')
@@ -56,8 +58,11 @@ class GuidBasedRecommender:
         self._addons_coinstallations = cache.get_s3_json_content(ADDON_LIST_BUCKET,
                                                                  ADDON_LIST_KEY)
 
+        self.logger.info("Loaded GUID coinstallation model.")
         self._guid_rankings = cache.get_s3_json_content(ADDON_LIST_BUCKET,
                                                         GUID_RANKING_KEY)
+        self.logger.info("Loaded GUID rankings by install incidence.")
+
         if self._addons_coinstallations is None:
             msg = "Cannot download addon coinstallation file {}".format(ADDON_LIST_KEY)
             self.logger.error(msg)
