@@ -70,6 +70,19 @@ def MOCK_GUID_RANKING():
 
 
 @pytest.fixture
+def CUTOFF_GUID_RANKING():
+    return {"guid-1": 10000,
+            'guid-2': 9000,
+            'guid-3': 8000,
+            'guid-4': 7,
+            'guid-5': 6000,
+            "guid-6": 5000,
+            'guid-7': 4000,
+            'guid-8': 3000,
+            'guid-9': 2000}
+
+
+@pytest.fixture
 def default_ctx():
     """
     This sets up a basic context for use for testing

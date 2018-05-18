@@ -46,6 +46,9 @@ RESULTS = {
                              ('guid-3', '000000000.2500000000.0000000008'),
                              ('guid-4', '000000000.2500000000.0000000007'),
                              ('guid-5', '000000000.2500000000.0000000006')],
+    'rownorm_sum_tiebreak_cutoff': [('guid-1', '000000000.3333333333.0000010000'),   # noqa
+                                    ('guid-3', '000000000.3333333333.0000008000'),   # noqa
+                                    ('guid-5', '000000000.3333333333.0000006000')],  # noqa
     'row_sum': [('guid-1', '000000000.3225806452.0000000010'),
                 ('guid-3', '000000000.2857142857.0000000008'),
                 ('guid-8', '000000000.2307692308.0000000003'),
@@ -115,13 +118,16 @@ def test_rownorm_sumrownorm(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     Some notes on verifying guid-1:
 
     Numerator is the row weighted value of guid-1 : 50/150
-    Denominator is the sum of the row weighted value of guid-1 in all other rows
+    Denominator is the sum of the row weighted value of guid-1 in all
+    other rows
 
     (guid-2) 50/150
     (guid-3) 100/210
     (guid-6) 5/305
 
-    This gives us: [0.3333333333333333, 0.47619047619047616, 0.01639344262295082]
+    This gives us: [0.3333333333333333,
+                    0.47619047619047616,
+                    0.01639344262295082]
 
     so the final result should be (5/150) / (50/150 + 100/210 + 5/305)
 
@@ -166,6 +172,23 @@ def test_guidception(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
 def test_rownorm_sum_tiebreak(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak']
     install_mock_data(TIE_MOCK_DATA, MOCK_GUID_RANKING)
+
+    recommender = GuidBasedRecommender(default_ctx)
+    guid = "guid-2"
+
+    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'})
+
+    # Note that the results have weights that are equal, but the tie
+    # break is solved by the install rate.
+    assert actual == EXPECTED_RESULTS
+
+
+@mock_s3
+def test_floor_install_threshold(default_ctx,
+                                 TIE_MOCK_DATA,
+                                 CUTOFF_GUID_RANKING):
+    EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak_cutoff']
+    install_mock_data(TIE_MOCK_DATA, CUTOFF_GUID_RANKING)
 
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
