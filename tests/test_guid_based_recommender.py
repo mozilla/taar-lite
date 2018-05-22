@@ -9,6 +9,9 @@ from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_BUCKET
 from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_KEY
 from taar_lite.recommenders.guid_based_recommender import GUID_RANKING_KEY
 
+from .conftest import mock_cold_redis_cache
+from taar_lite.recommenders.cache import LazyJSONLoader
+
 # The different kinds of results we can expect from TAARlite are
 # listed below.  Note that the ordering of GUIDs returned, and even
 # the set of GUIDs returned may be altered by the different weight
@@ -60,8 +63,7 @@ RESULTS = {
 }
 
 
-def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING):
-
+def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx):
     conn = boto3.resource('s3', region_name='us-west-2')
 
     conn.create_bucket(Bucket=ADDON_LIST_BUCKET)
@@ -71,13 +73,25 @@ def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING):
     conn.Object(ADDON_LIST_BUCKET, GUID_RANKING_KEY)\
         .put(Body=json.dumps(MOCK_GUID_RANKING))
 
+    coinstall_loader = LazyJSONLoader(default_ctx,
+                                      ADDON_LIST_BUCKET,
+                                      ADDON_LIST_KEY)
+
+    ranking_loader = LazyJSONLoader(default_ctx,
+                                    ADDON_LIST_BUCKET,
+                                    GUID_RANKING_KEY)
+
+    default_ctx['coinstall_loader'] = mock_cold_redis_cache(coinstall_loader)
+    default_ctx['ranking_loader'] = mock_cold_redis_cache(ranking_loader)
+
 
 @mock_s3
 def test_recommender_nonormal(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['default']
-    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
+    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
 
     recommender = GuidBasedRecommender(default_ctx)
+
     guid = "guid-1"
 
     actual = recommender.recommend({'guid': guid, 'normalize': 'none'})
@@ -87,7 +101,7 @@ def test_recommender_nonormal(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
 @mock_s3
 def test_row_count_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['row_count']
-    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
+    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
 
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
@@ -102,7 +116,7 @@ def test_row_count_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
 @mock_s3
 def test_rownorm_sumrownorm(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['rownorm_sum']
-    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
+    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
 
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
@@ -141,7 +155,7 @@ def test_rownorm_sumrownorm(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
 @mock_s3
 def test_rowsum_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['row_sum']
-    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
+    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
 
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
@@ -159,7 +173,7 @@ def test_rowsum_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
 @mock_s3
 def test_guidception(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['guidception']
-    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
+    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
 
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
@@ -171,24 +185,7 @@ def test_guidception(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
 @mock_s3
 def test_rownorm_sum_tiebreak(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak']
-    install_mock_data(TIE_MOCK_DATA, MOCK_GUID_RANKING)
-
-    recommender = GuidBasedRecommender(default_ctx)
-    guid = "guid-2"
-
-    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'})
-
-    # Note that the results have weights that are equal, but the tie
-    # break is solved by the install rate.
-    assert actual == EXPECTED_RESULTS
-
-
-@mock_s3
-def test_floor_install_threshold(default_ctx,
-                                 TIE_MOCK_DATA,
-                                 CUTOFF_GUID_RANKING):
-    EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak_cutoff']
-    install_mock_data(TIE_MOCK_DATA, CUTOFF_GUID_RANKING)
+    install_mock_data(TIE_MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
 
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"

@@ -8,4 +8,4 @@ upload:
 test:
 	python setup.py develop
 	python setup.py test
-	flake8 taar tests
+	flake8 --max-line-length=120 taar_lite tests

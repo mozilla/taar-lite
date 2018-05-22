@@ -4,6 +4,8 @@ These are global fixtures automagically loaded by pytest
 
 import pytest
 from srgutil.context import default_context
+from unittest.mock import Mock
+from threading import Lock
 
 
 @pytest.fixture
@@ -87,4 +89,26 @@ def default_ctx():
     """
     This sets up a basic context for use for testing
     """
-    return default_context()
+    ctx = default_context()
+    ctx['ignore_redis'] = True
+    return ctx
+
+
+def mock_cold_redis_cache(json_loader):
+    """
+    Mock out the methods of the jsonloader and return it
+    """
+    json_loader._redis = Mock()
+
+    # Set the redis cache as cold
+    json_loader._redis.exists.return_value = False
+
+    # Set the redis cache as cold
+    json_loader._redis.get.return_value = None
+
+    json_loader._redis.lock.return_value = Lock()
+
+    # Set the locally cached JSON data object to None
+    json_loader._cached_copy = None
+
+    return json_loader
