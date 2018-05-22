@@ -61,7 +61,6 @@ RESULTS = {
 
 
 def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING):
-
     conn = boto3.resource('s3', region_name='us-west-2')
 
     conn.create_bucket(Bucket=ADDON_LIST_BUCKET)
@@ -172,23 +171,6 @@ def test_guidception(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
 def test_rownorm_sum_tiebreak(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak']
     install_mock_data(TIE_MOCK_DATA, MOCK_GUID_RANKING)
-
-    recommender = GuidBasedRecommender(default_ctx)
-    guid = "guid-2"
-
-    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'})
-
-    # Note that the results have weights that are equal, but the tie
-    # break is solved by the install rate.
-    assert actual == EXPECTED_RESULTS
-
-
-@mock_s3
-def test_floor_install_threshold(default_ctx,
-                                 TIE_MOCK_DATA,
-                                 CUTOFF_GUID_RANKING):
-    EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak_cutoff']
-    install_mock_data(TIE_MOCK_DATA, CUTOFF_GUID_RANKING)
 
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"

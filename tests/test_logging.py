@@ -1,10 +1,10 @@
 from moto import mock_s3
-import boto3
+from taar_lite.recommenders import GuidBasedRecommender
 from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_BUCKET
 from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_KEY
 from taar_lite.recommenders.guid_based_recommender import GUID_RANKING_KEY
+import boto3
 import json
-from taar_lite.recommenders import GuidBasedRecommender
 
 
 @mock_s3
@@ -13,7 +13,6 @@ def test_logging(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     conn.create_bucket(Bucket=ADDON_LIST_BUCKET)
     conn.Object(ADDON_LIST_BUCKET, ADDON_LIST_KEY)\
         .put(Body=json.dumps(MOCK_DATA))
-
     conn.Object(ADDON_LIST_BUCKET, GUID_RANKING_KEY)\
         .put(Body=json.dumps(MOCK_GUID_RANKING))
 

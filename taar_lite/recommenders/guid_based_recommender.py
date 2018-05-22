@@ -3,12 +3,14 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from srgutil.interfaces import IS3Data, IMozLogging
+from .cache import LazyJSONLoader
 import numpy as np
 
 ADDON_LIST_BUCKET = 'telemetry-parquet'
 ADDON_LIST_KEY = 'taar/lite/guid_coinstallation.json'
 GUID_RANKING_KEY = 'taar/lite/guid_install_ranking.json'
 
+ADDON_DL_ERR = "Cannot download addon coinstallation file {}".format(ADDON_LIST_KEY)   # noqa
 
 NORM_MODE_ROWNORMSUM = 'rownorm_sum'
 NORM_MODE_ROWCOUNT = 'row_count'
@@ -17,11 +19,13 @@ NORM_MODE_GUIDCEPTION = 'guidception'
 
 
 class GuidBasedRecommender:
-    """ A recommender class that returns top N addons based on a passed addon identifier.
-    This will load a json file containing updated top n addons coinstalled with the addon
-    passed as an input parameter based on periodically updated  addon-addon coinstallation
-    frequency table generated from  Longitdudinal Telemetry data.
-    This recommender will drive recommendations surfaced on addons.mozilla.org
+    """ A recommender class that returns top N addons based on a
+    passed addon identifier.  This will load a json file containing
+    updated top n addons coinstalled with the addon passed as an input
+    parameter based on periodically updated  addon-addon
+    coinstallation frequency table generated from  Longitdudinal
+    Telemetry data.  This recommender will drive recommendations
+    surfaced on addons.mozilla.org
 
 
     We store the JSON data for the GUID coinstallation in memory. This
@@ -46,26 +50,44 @@ class GuidBasedRecommender:
     def __init__(self, ctx):
         self._ctx = ctx
         assert IS3Data in self._ctx
+
+        self._addons_coinstall_loader = LazyJSONLoader(self._ctx,
+                                                       ADDON_LIST_BUCKET,
+                                                       ADDON_LIST_KEY)
+
+        self._guid_ranking_loader = LazyJSONLoader(self._ctx,
+                                                   ADDON_LIST_BUCKET,
+                                                   GUID_RANKING_KEY)
+
         self._init_from_ctx()
         self._precompute_normalization()
 
         self.logger.info("GUIDBasedRecommender is initialized")
 
     def _init_from_ctx(self):
-        cache = self._ctx[IS3Data]
         self.logger = self._ctx[IMozLogging].get_logger('taarlite')
+        self.refresh_models()
 
-        self._addons_coinstallations = cache.get_s3_json_content(ADDON_LIST_BUCKET,
-                                                                 ADDON_LIST_KEY)
+    @property
+    def _addons_coinstallations(self):
+        return self._addons_coinstall_loader.get()
 
-        self.logger.info("Loaded GUID coinstallation model.")
-        self._guid_rankings = cache.get_s3_json_content(ADDON_LIST_BUCKET,
-                                                        GUID_RANKING_KEY)
-        self.logger.info("Loaded GUID rankings by install incidence.")
+    @property
+    def _guid_rankings(self):
+        return self._guid_ranking_loader.get()
 
+    def refresh_models(self):
         if self._addons_coinstallations is None:
-            msg = "Cannot download addon coinstallation file {}".format(ADDON_LIST_KEY)
-            self.logger.error(msg)
+            self.logger.error(ADDON_DL_ERR)
+
+        # Compute the floor install incidence that recommended addons
+        # must satisfy.  Take 5% of the mean of all installed addons.
+        self._min_installs = np.mean(list(self._guid_rankings.values())) * 0.05
+
+        # Warn if the minimum number of installs drops below 100.
+        if self._min_installs < 100:
+            msg = "minimum installs threshold low: [%s]" % self._min_installs
+            self.logger.warn(msg)
 
         # Compute the floor install incidence that recommended addons
         # must satisfy.  Take 5% of the mean of all installed addons.

@@ -87,4 +87,6 @@ def default_ctx():
     """
     This sets up a basic context for use for testing
     """
-    return default_context()
+    ctx = default_context()
+    ctx['ignore_redis'] = True
+    return ctx
