@@ -51,13 +51,19 @@ class GuidBasedRecommender:
         self._ctx = ctx
         assert IS3Data in self._ctx
 
-        self._addons_coinstall_loader = LazyJSONLoader(self._ctx,
-                                                       ADDON_LIST_BUCKET,
-                                                       ADDON_LIST_KEY)
+        if 'coinstall_loader' in self._ctx:
+            self._addons_coinstall_loader = self._ctx['coinstall_loader']
+        else:
+            self._addons_coinstall_loader = LazyJSONLoader(self._ctx,
+                                                           ADDON_LIST_BUCKET,
+                                                           ADDON_LIST_KEY)
 
-        self._guid_ranking_loader = LazyJSONLoader(self._ctx,
-                                                   ADDON_LIST_BUCKET,
-                                                   GUID_RANKING_KEY)
+        if 'ranking_loader' in self._ctx:
+            self._guid_ranking_loader = self._ctx['ranking_loader']
+        else:
+            self._guid_ranking_loader = LazyJSONLoader(self._ctx,
+                                                       ADDON_LIST_BUCKET,
+                                                       GUID_RANKING_KEY)
 
         self._init_from_ctx()
         self._precompute_normalization()

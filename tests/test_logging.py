@@ -5,6 +5,8 @@ from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_KEY
 from taar_lite.recommenders.guid_based_recommender import GUID_RANKING_KEY
 import boto3
 import json
+from taar_lite.recommenders.cache import LazyJSONLoader
+from .conftest import mock_cold_redis_cache
 
 
 @mock_s3
@@ -15,6 +17,16 @@ def test_logging(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
         .put(Body=json.dumps(MOCK_DATA))
     conn.Object(ADDON_LIST_BUCKET, GUID_RANKING_KEY)\
         .put(Body=json.dumps(MOCK_GUID_RANKING))
+    coinstall_loader = LazyJSONLoader(default_ctx,
+                                      ADDON_LIST_BUCKET,
+                                      ADDON_LIST_KEY)
+
+    ranking_loader = LazyJSONLoader(default_ctx,
+                                    ADDON_LIST_BUCKET,
+                                    GUID_RANKING_KEY)
+
+    default_ctx['coinstall_loader'] = mock_cold_redis_cache(coinstall_loader)
+    default_ctx['ranking_loader'] = mock_cold_redis_cache(ranking_loader)
 
     recommender = GuidBasedRecommender(default_ctx)
 
