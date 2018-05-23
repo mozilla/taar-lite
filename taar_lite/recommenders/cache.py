@@ -8,7 +8,7 @@ class LazyJSONLoader:
     def __init__(self, ctx, s3_bucket, s3_key, expiry=14400):
         self._ctx = ctx
 
-        self._redis = redis.StrictRedis(host='localhost', port=6379, db=0)
+        self._redis = redis.StrictRedis(host='redis', port=6379, db=0)
 
         self.logger = self._ctx[IMozLogging].get_logger('srgutil')
 
