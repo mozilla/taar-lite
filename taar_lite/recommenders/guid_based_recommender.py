@@ -72,17 +72,7 @@ class GuidBasedRecommender:
 
     def _init_from_ctx(self):
         self.logger = self._ctx[IMozLogging].get_logger('taarlite')
-        self.refresh_models()
 
-    @property
-    def _addons_coinstallations(self):
-        return self._addons_coinstall_loader.get()
-
-    @property
-    def _guid_rankings(self):
-        return self._guid_ranking_loader.get()
-
-    def refresh_models(self):
         if self._addons_coinstallations is None:
             self.logger.error(ADDON_DL_ERR)
 
@@ -92,16 +82,16 @@ class GuidBasedRecommender:
 
         # Warn if the minimum number of installs drops below 100.
         if self._min_installs < 100:
-            msg = "minimum installs threshold low: [%s]" % self._min_installs
-            self.logger.warn(msg)
-
-        # Compute the floor install incidence that recommended addons
-        # must satisfy.  Take 5% of the mean of all installed addons.
-        self._min_installs = np.mean(list(self._guid_rankings.values())) * 0.05
-
-        # Warn if the minimum number of installs drops below 100.
-        if self._min_installs < 100:
             self.logger.warn("minimum installs threshold low: [%s]" % self._min_installs)
+
+    @property
+    def _addons_coinstallations(self):
+        return self._addons_coinstall_loader.get()
+
+    @property
+    def _guid_rankings(self):
+        return self._guid_ranking_loader.get()
+
 
     def _precompute_normalization(self):
         if self._addons_coinstallations is None:
