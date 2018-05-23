@@ -91,6 +91,7 @@ def default_ctx():
     """
     ctx = default_context()
     ctx['ignore_redis'] = True
+    ctx['CACHE_URL'] = "redis://redis:6369/0"
     return ctx
 
 
