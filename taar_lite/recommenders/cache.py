@@ -16,7 +16,13 @@ class LazyJSONLoader:
         self._s3_bucket = s3_bucket
         self._s3_key = s3_key
 
+
+
+        self.logger = self._ctx[IMozLogging].get_logger('srgutil')
+
         self._expiry_seconds = expiry
+        self.logger.info("Set expiry time to {}",.format(self._expiry_seconds))
+
         self._cached_copy = None
         self._thread_lock = RLock()
 
