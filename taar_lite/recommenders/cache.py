@@ -53,7 +53,7 @@ class LazyJSONLoader:
                 # Note that we need to hold the redis lock until we
                 # return a value or have updated redis with new data
                 # and a new expiration time.
-                with self._redis.lock("lock|{}".format(key_str), timeout=2):
+                with self._redis.lock("lock|{}".format(key_str), timeout=60):
                     # If the redis cache is hot and we have a cached copy
                     # still, just return the cached copy
                     if self._redis.exists(key_str) and self._cached_copy is not None:
