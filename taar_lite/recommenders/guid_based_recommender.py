@@ -92,7 +92,6 @@ class GuidBasedRecommender:
     def _guid_rankings(self):
         return self._guid_ranking_loader.get()
 
-
     def _precompute_normalization(self):
         if self._addons_coinstallations is None:
             self.logger.error("Cannot find addon coinstallations to normalize.")

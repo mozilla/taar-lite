@@ -9,6 +9,8 @@ import json
 from .conftest import mock_cold_redis_cache
 from unittest.mock import Mock
 
+from contextlib import contextmanager
+
 
 def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING):
     conn = boto3.resource('s3', region_name='us-west-2')
@@ -27,6 +29,15 @@ def test_get_json_hot_cache(default_ctx):
                                       ADDON_LIST_KEY)
 
     coinstall_loader._redis = Mock()
+
+    # Mock out the lock
+    @contextmanager
+    def MockContextManager(*args, **kwargs):
+        pass
+        yield
+        pass
+
+    coinstall_loader._redis.lock.return_value = MockContextManager()
 
     # Set the redis cache as hot
     coinstall_loader._redis.exists.return_value = True
