@@ -5,6 +5,7 @@
 from srgutil.interfaces import IS3Data, IMozLogging
 from .cache import LazyJSONLoader
 import numpy as np
+from decouple import config
 
 ADDON_LIST_BUCKET = 'telemetry-parquet'
 ADDON_LIST_KEY = 'taar/lite/guid_coinstallation.json'
@@ -16,6 +17,8 @@ NORM_MODE_ROWNORMSUM = 'rownorm_sum'
 NORM_MODE_ROWCOUNT = 'row_count'
 NORM_MODE_ROWSUM = 'row_sum'
 NORM_MODE_GUIDCEPTION = 'guidception'
+
+TAAR_CACHE_EXPIRY = config('TAAR_CACHE_EXPIRY', default=14400, cast=int)
 
 
 class GuidBasedRecommender:
@@ -56,14 +59,16 @@ class GuidBasedRecommender:
         else:
             self._addons_coinstall_loader = LazyJSONLoader(self._ctx,
                                                            ADDON_LIST_BUCKET,
-                                                           ADDON_LIST_KEY)
+                                                           ADDON_LIST_KEY,
+                                                           TAAR_CACHE_EXPIRY)
 
         if 'ranking_loader' in self._ctx:
             self._guid_ranking_loader = self._ctx['ranking_loader']
         else:
             self._guid_ranking_loader = LazyJSONLoader(self._ctx,
                                                        ADDON_LIST_BUCKET,
-                                                       GUID_RANKING_KEY)
+                                                       GUID_RANKING_KEY,
+                                                       TAAR_CACHE_EXPIRY)
 
         self._init_from_ctx()
         self._precompute_normalization()
