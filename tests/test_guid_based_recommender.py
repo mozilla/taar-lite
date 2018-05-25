@@ -9,7 +9,6 @@ from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_BUCKET
 from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_KEY
 from taar_lite.recommenders.guid_based_recommender import GUID_RANKING_KEY
 
-from .conftest import mock_cold_redis_cache
 from taar_lite.recommenders.cache import LazyJSONLoader
 
 # The different kinds of results we can expect from TAARlite are
@@ -81,8 +80,8 @@ def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx):
                                     ADDON_LIST_BUCKET,
                                     GUID_RANKING_KEY)
 
-    default_ctx['coinstall_loader'] = mock_cold_redis_cache(coinstall_loader)
-    default_ctx['ranking_loader'] = mock_cold_redis_cache(ranking_loader)
+    default_ctx['coinstall_loader'] = coinstall_loader
+    default_ctx['ranking_loader'] = ranking_loader
 
 
 @mock_s3
