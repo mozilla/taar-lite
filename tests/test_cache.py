@@ -6,10 +6,7 @@ from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_KEY
 from taar_lite.recommenders.guid_based_recommender import GUID_RANKING_KEY
 import boto3
 import json
-from .conftest import mock_cold_redis_cache
-from unittest.mock import Mock
-
-from contextlib import contextmanager
+from srgutil.interfaces import IClock
 
 
 def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING):
@@ -23,29 +20,19 @@ def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING):
         .put(Body=json.dumps(MOCK_GUID_RANKING))
 
 
-def test_get_json_hot_cache(default_ctx):
+@mock_s3
+def test_get_json_hot_cache(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
+    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
     coinstall_loader = LazyJSONLoader(default_ctx,
                                       ADDON_LIST_BUCKET,
                                       ADDON_LIST_KEY)
 
-    coinstall_loader._redis = Mock()
-
-    # Mock out the lock
-    @contextmanager
-    def MockContextManager(*args, **kwargs):
-        pass
-        yield
-        pass
-
-    coinstall_loader._redis.lock.return_value = MockContextManager()
-
-    # Set the redis cache as hot
-    coinstall_loader._redis.exists.return_value = True
     # Set the locally cached JSON data object
-    coinstall_loader._cached_copy = {"payload": "hot cached copy"}
+    MOCK_DATA['s3_cached_copy'] = True
+    coinstall_loader._cached_copy = MOCK_DATA
 
     actual = coinstall_loader.get()
-    assert actual == {"payload": "hot cached copy"}
+    assert 's3_cached_copy' in actual
 
 
 @mock_s3
@@ -55,9 +42,72 @@ def test_get_json_cold_cache(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
                                       ADDON_LIST_BUCKET,
                                       ADDON_LIST_KEY)
 
-    mock_cold_redis_cache(coinstall_loader)
+    coinstall_loader._cached_copy = None
 
     actual = coinstall_loader.get()
 
     # The data from the S3 mocking should be loaded here
     assert actual == MOCK_DATA
+
+
+@mock_s3
+def test_cache_ttl_honored(default_ctx, MOCK_DATA, MOCK_GUID_RANKING, capsys):
+    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
+
+    class mock_clock:
+        def set_time(self, time):
+            self._time = time
+
+        def time(self):
+            return self._time
+
+    clock = mock_clock()
+    clock.set_time(0)
+
+    default_ctx[IClock] = clock
+
+    coinstall_loader = LazyJSONLoader(default_ctx,
+                                      ADDON_LIST_BUCKET,
+                                      ADDON_LIST_KEY,
+                                      30)
+
+    # Force cached copy to be cleared
+    coinstall_loader._cached_copy = None
+
+    class check_call:
+        def __init__(self, method):
+            self._method = method
+            self._called = False
+
+        def __call__(self, *args, **kwargs):
+            self._called = True
+            return self._method(*args, **kwargs)
+
+        def clear_call(self):
+            self._called = False
+
+        def called(self):
+            return self._called
+
+    coinstall_loader._refresh_cache = check_call(coinstall_loader._refresh_cache)
+
+    # Check that refresh cache is called on the get from cold cache
+    # state
+    assert coinstall_loader._refresh_cache.called() is False
+    actual = coinstall_loader.get()
+    assert coinstall_loader._refresh_cache.called()
+
+    # The data from the S3 mocking should be loaded here
+    assert actual == MOCK_DATA
+
+    # Clear the call state and force lots of reloads
+    coinstall_loader._refresh_cache.clear_call()
+    for i in range(200):
+        coinstall_loader.get()
+    assert coinstall_loader._refresh_cache.called() is False
+
+    # Forward the clock to go past TTL and verify that get() forces a
+    # refresh
+    clock.set_time(500)
+    actual = coinstall_loader.get()
+    assert coinstall_loader._refresh_cache.called()
