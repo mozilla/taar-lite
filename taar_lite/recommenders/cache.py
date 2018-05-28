@@ -23,8 +23,6 @@ class LazyJSONLoader:
 
         self._lock = threading.RLock()
 
-        # Force a load on construction so that cache is hot.
-        self.get()
         self.logger.info("{} loader is initialized".format(self._key_str))
 
     def has_expired(self):
@@ -39,9 +37,9 @@ class LazyJSONLoader:
         Fetch the JSON object from cache or S3 if necessary
         """
         if not self.has_expired() and self._cached_copy is not None:
-            return self._cached_copy
+            return self._cached_copy, False
 
-        return self._refresh_cache()
+        return self._refresh_cache(), True
 
     def _refresh_cache(self):
         with self._lock:

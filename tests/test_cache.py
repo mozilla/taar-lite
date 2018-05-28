@@ -22,16 +22,13 @@ def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING):
 
 @mock_s3
 def test_get_json_hot_cache(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
+    MOCK_DATA['s3_cached_copy'] = True
     install_mock_data(MOCK_DATA, MOCK_GUID_RANKING)
     coinstall_loader = LazyJSONLoader(default_ctx,
                                       ADDON_LIST_BUCKET,
                                       ADDON_LIST_KEY)
 
-    # Set the locally cached JSON data object
-    MOCK_DATA['s3_cached_copy'] = True
-    coinstall_loader._cached_copy = MOCK_DATA
-
-    actual = coinstall_loader.get()
+    actual, refreshed = coinstall_loader.get()
     assert 's3_cached_copy' in actual
 
 
@@ -44,7 +41,7 @@ def test_get_json_cold_cache(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
 
     coinstall_loader._cached_copy = None
 
-    actual = coinstall_loader.get()
+    actual, refreshed = coinstall_loader.get()
 
     # The data from the S3 mocking should be loaded here
     assert actual == MOCK_DATA
@@ -94,7 +91,8 @@ def test_cache_ttl_honored(default_ctx, MOCK_DATA, MOCK_GUID_RANKING, capsys):
     # Check that refresh cache is called on the get from cold cache
     # state
     assert coinstall_loader._refresh_cache.called() is False
-    actual = coinstall_loader.get()
+    actual, refreshed = coinstall_loader.get()
+    assert refreshed is True
     assert coinstall_loader._refresh_cache.called()
 
     # The data from the S3 mocking should be loaded here
@@ -103,11 +101,13 @@ def test_cache_ttl_honored(default_ctx, MOCK_DATA, MOCK_GUID_RANKING, capsys):
     # Clear the call state and force lots of reloads
     coinstall_loader._refresh_cache.clear_call()
     for i in range(200):
-        coinstall_loader.get()
+        actual, refreshed = coinstall_loader.get()
+        assert refreshed is False
     assert coinstall_loader._refresh_cache.called() is False
 
     # Forward the clock to go past TTL and verify that get() forces a
     # refresh
     clock.set_time(500)
-    actual = coinstall_loader.get()
+    actual, refreshed = coinstall_loader.get()
+    assert refreshed is True
     assert coinstall_loader._refresh_cache.called()
