@@ -71,7 +71,14 @@ class GuidBasedRecommender:
                                                        TAAR_CACHE_EXPIRY)
 
         self._init_from_ctx()
-        self._precompute_normalization()
+
+        # Force access to the JSON models for each request at
+        # recommender construction.  This was lifted out of the
+        # constructor for the LazyJSONLoader so that the
+        # precomputation of the normalization tables can be done in
+        # the recommender.
+        _ = self._addons_coinstallations  # noqa
+        _ = self._guid_rankings           # noqa
 
         self.logger.info("GUIDBasedRecommender is initialized")
 
@@ -91,11 +98,19 @@ class GuidBasedRecommender:
 
     @property
     def _addons_coinstallations(self):
-        return self._addons_coinstall_loader.get()
+        result, refreshed = self._addons_coinstall_loader.get()
+        if refreshed:
+            self.logger.info("Refreshing guid_maps for normalization")
+            self._precompute_normalization()
+        return result
 
     @property
     def _guid_rankings(self):
-        return self._guid_ranking_loader.get()
+        result, refreshed = self._guid_ranking_loader.get()
+        if refreshed:
+            self.logger.info("Refreshing guid_maps for normalization")
+            self._precompute_normalization()
+        return result
 
     def _precompute_normalization(self):
         if self._addons_coinstallations is None:
@@ -162,6 +177,13 @@ class GuidBasedRecommender:
         """
         TAAR lite will yield 4 recommendations for the AMO page
         """
+
+        # Force access to the JSON models for each request at the
+        # start of the request to update normalization tables if
+        # required.
+        _ = self._addons_coinstallations  # noqa
+        _ = self._guid_rankings           # noqa
+
         addon_guid = client_data.get('guid')
 
         normalize = client_data.get('normalize', NORM_MODE_ROWNORMSUM)
@@ -255,12 +277,19 @@ class GuidBasedRecommender:
         explicitly.
         """
         tmp_dict = self._normalize_row_weights(input_coinstall_dict)
-
         guid_row_norm = self._guid_maps['guid_row_norm']
 
         output_dict = {}
         for output_guid, output_guid_weight in tmp_dict.items():
-            output_dict[output_guid] = output_guid_weight / sum(guid_row_norm[output_guid])
+            guid_row_norm_list = guid_row_norm.get(output_guid, [])
+            if len(guid_row_norm_list) == 0:
+                self.logger.warn("Can't find GUID_ROW_NORM data for [{}]".format(output_guid))
+                continue
+            norm_sum = sum(guid_row_norm_list)
+            if norm_sum == 0:
+                self.logger.warn("Sum of GUID_ROW_NORM data for [{}] is zero.".format(output_guid))
+                continue
+            output_dict[output_guid] = output_guid_weight / norm_sum
 
         return output_dict
 
