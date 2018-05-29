@@ -281,7 +281,15 @@ class GuidBasedRecommender:
 
         output_dict = {}
         for output_guid, output_guid_weight in tmp_dict.items():
-            output_dict[output_guid] = output_guid_weight / sum(guid_row_norm.get(output_guid, []))
+            guid_row_norm_list = guid_row_norm.get(output_guid, [])
+            if len(guid_row_norm_list) == 0:
+                self.logger.warn("Can't find GUID_ROW_NORM data for [{}]".format(output_guid))
+                continue
+            norm_sum = sum(guid_row_norm_list)
+            if norm_sum == 0:
+                self.logger.warn("Sum of GUID_ROW_NORM data for [{}] is zero.".format(output_guid))
+                continue
+            output_dict[output_guid] = output_guid_weight / norm_sum
 
         return output_dict
 
