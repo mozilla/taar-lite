@@ -101,57 +101,52 @@ class GuidBasedRecommender:
         result, refreshed = self._addons_coinstall_loader.get()
         if refreshed:
             self.logger.info("Refreshing guid_maps for normalization")
-            self._precompute_normalization()
+            if result is None:
+                self.logger.error("Cannot find addon coinstallations to normalize.")
+                return
+
+            # Capture the total number of times that a guid was
+            # coinstalled with another GUID
+            #
+            # This is a map is guid->sum of coinstall counts
+            guid_count_map = {}
+
+            # Capture the number of times a GUID shows up per row
+            # of coinstallation data.
+            #
+            # This is a map of guid->rows that this guid appears on
+            row_count = {}
+
+            guid_row_norm = {}
+
+            for guidkey, coinstalls in result.items():
+                rowsum = sum(coinstalls.values())
+                for coinstall_guid, coinstall_count in coinstalls.items():
+
+                    # Capture the total number of time a GUID was
+                    # coinstalled with other guids
+                    guid_count_map.setdefault(coinstall_guid, 0)
+                    guid_count_map[coinstall_guid] += coinstall_count
+
+                    # Capture the unique number of times a GUID is
+                    # coinstalled with other guids
+                    row_count.setdefault(coinstall_guid, 0)
+                    row_count[coinstall_guid] += 1
+
+                    if coinstall_guid not in guid_row_norm:
+                        guid_row_norm[coinstall_guid] = []
+                    guid_row_norm[coinstall_guid].append(1.0 * coinstall_count / rowsum)
+
+            self._guid_maps = {'count_map': guid_count_map,
+                               'row_count': row_count,
+                               'guid_row_norm': guid_row_norm}
+            ######
         return result
 
     @property
     def _guid_rankings(self):
-        result, refreshed = self._guid_ranking_loader.get()
-        if refreshed:
-            self.logger.info("Refreshing guid_maps for normalization")
-            self._precompute_normalization()
+        result, _ignored_refreshed = self._guid_ranking_loader.get()
         return result
-
-    def _precompute_normalization(self):
-        if self._addons_coinstallations is None:
-            self.logger.error("Cannot find addon coinstallations to normalize.")
-            return
-
-        # Capture the total number of times that a guid was
-        # coinstalled with another GUID
-        #
-        # This is a map is guid->sum of coinstall counts
-        guid_count_map = {}
-
-        # Capture the number of times a GUID shows up per row
-        # of coinstallation data.
-        #
-        # This is a map of guid->rows that this guid appears on
-        row_count = {}
-
-        guid_row_norm = {}
-
-        for guidkey, coinstalls in self._addons_coinstallations.items():
-            rowsum = sum(coinstalls.values())
-            for coinstall_guid, coinstall_count in coinstalls.items():
-
-                # Capture the total number of time a GUID was
-                # coinstalled with other guids
-                guid_count_map.setdefault(coinstall_guid, 0)
-                guid_count_map[coinstall_guid] += coinstall_count
-
-                # Capture the unique number of times a GUID is
-                # coinstalled with other guids
-                row_count.setdefault(coinstall_guid, 0)
-                row_count[coinstall_guid] += 1
-
-                if coinstall_guid not in guid_row_norm:
-                    guid_row_norm[coinstall_guid] = []
-                guid_row_norm[coinstall_guid].append(1.0 * coinstall_count / rowsum)
-
-        self._guid_maps = {'count_map': guid_count_map,
-                           'row_count': row_count,
-                           'guid_row_norm': guid_row_norm}
 
     def can_recommend(self, client_data):
         # We can't recommend if we don't have our data files.
