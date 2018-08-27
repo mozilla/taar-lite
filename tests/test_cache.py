@@ -1,12 +1,15 @@
-from moto import mock_s3
-from taar_lite.recommenders import GuidBasedRecommender  # noqa
-from taar_lite.recommenders.cache import LazyJSONLoader  # noqa
-from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_BUCKET
-from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_KEY
-from taar_lite.recommenders.guid_based_recommender import GUID_RANKING_KEY
-import boto3
 import json
+import boto3
+from moto import mock_s3
 from srgutil.interfaces import IClock
+
+from taar_lite.production import (
+    GuidBasedRecommender,
+    ADDON_LIST_BUCKET,
+    ADDON_LIST_KEY,
+    GUID_RANKING_KEY,
+)
+from taar_lite.utils.cache import LazyJSONLoader
 
 
 def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING):

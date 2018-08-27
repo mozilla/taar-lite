@@ -1,11 +1,13 @@
-from moto import mock_s3
-from taar_lite.recommenders import GuidBasedRecommender
-from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_BUCKET
-from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_KEY
-from taar_lite.recommenders.guid_based_recommender import GUID_RANKING_KEY
-import boto3
 import json
-from taar_lite.recommenders.cache import LazyJSONLoader
+import boto3
+from moto import mock_s3
+from taar_lite.production import (
+    GuidBasedRecommender,
+    ADDON_LIST_BUCKET,
+    ADDON_LIST_KEY,
+    GUID_RANKING_KEY,
+)
+from taar_lite.utils.cache import LazyJSONLoader
 
 
 @mock_s3
@@ -26,6 +28,7 @@ def test_logging(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
 
     default_ctx['coinstall_loader'] = coinstall_loader
     default_ctx['ranking_loader'] = ranking_loader
+    default_ctx['validate_coinstall_graph'] = False
 
     recommender = GuidBasedRecommender(default_ctx)
 

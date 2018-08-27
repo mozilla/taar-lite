@@ -4,14 +4,14 @@ from moto import mock_s3
 import boto3
 import pytest
 
-from taar_lite.recommenders import GuidBasedRecommender
-from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_BUCKET
-from taar_lite.recommenders.guid_based_recommender import ADDON_LIST_KEY
-from taar_lite.recommenders.guid_based_recommender import GUID_RANKING_KEY
-
-from taar_lite.recommenders.cache import LazyJSONLoader
-
-from taar_lite.recommenders.ua_parser import parse_ua, OSNAME_TO_ID
+from taar_lite.production import (
+    GuidBasedRecommender,
+    ADDON_LIST_BUCKET,
+    ADDON_LIST_KEY,
+    GUID_RANKING_KEY,
+)
+from taar_lite.utils.cache import LazyJSONLoader
+from taar_lite.utils.ua_parser import parse_ua, OSNAME_TO_ID
 
 # The different kinds of results we can expect from TAARlite are
 # listed below.  Note that the ordering of GUIDs returned, and even
@@ -84,6 +84,7 @@ def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx):
 
     default_ctx['coinstall_loader'] = coinstall_loader
     default_ctx['ranking_loader'] = ranking_loader
+    default_ctx['validate_coinstall_graph'] = False
 
 
 @mock_s3
