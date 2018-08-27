@@ -119,14 +119,12 @@ class GuidBasedRecommender:
         return result
 
     def _precompute_recommenders(self):
-        validate = self._ctx.get('validate_coinstall_graph', True)
-
         def get_recommender(treatment):
             return GuidGuidCoinstallRecommender(
                 self._addons_coinstallations,
                 self._guid_rankings,
                 treatment,
-                validate_raw_coinstallation_graph=validate
+                validate_raw_coinstallation_graph=False
             )
         self._recommenders = {
             'none': get_recommender(NoTreatment()),

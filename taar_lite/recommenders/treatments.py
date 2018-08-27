@@ -29,13 +29,21 @@ class RowSum(BaseTreatment):
     coinstallation GUIDs.
     """
     def treat(self, input_coinstall_dict):
-        # TODO
-        guid_count_map = self._guid_maps['count_map']
-        output_dict = {}
-        for guid, guid_weight in input_coinstall_dict.items():
-            norm_guid_weight = guid_weight * 1.0 / guid_count_map[guid]
-            output_dict[guid] = norm_guid_weight
-        return output_dict
+        guid_count_map = {}
+        for guidkey, coinstalls in input_coinstall_dict.items():
+            for coinstall_guid, coinstall_count in coinstalls.items():
+                guid_count_map.setdefault(coinstall_guid, 0)
+                guid_count_map[coinstall_guid] += coinstall_count
+
+        treatment_dict = {}
+        for guidkey, coinstalls in input_coinstall_dict.items():
+            output_dict = {}
+            for guid, guid_weight in coinstalls.items():
+                norm_guid_weight = guid_weight * 1.0 / guid_count_map[guid]
+                output_dict[guid] = norm_guid_weight
+            treatment_dict[guidkey] = output_dict
+
+        return treatment_dict
 
 
 class RowCount(BaseTreatment):
@@ -47,13 +55,20 @@ class RowCount(BaseTreatment):
     """
 
     def treat(self, input_coinstall_dict):
-        # TODO
-        uniq_guid_map = self._guid_maps['row_count']
+        row_count = {}
+        for guidkey, coinstalls in input_coinstall_dict.items():
+            for coinstall_guid, _ in coinstalls.items():
+                row_count.setdefault(coinstall_guid, 0)
+                row_count[coinstall_guid] += 1
 
-        output_result_dict = {}
-        for result_guid, result_count in input_coinstall_dict.items():
-            output_result_dict[result_guid] = 1.0 * result_count / uniq_guid_map[result_guid]
-        return output_result_dict
+        treatment_dict = {}
+        for guidkey, coinstalls in input_coinstall_dict.items():
+            output_dict = {}
+            for result_guid, result_count in coinstalls.items():
+                output_dict[result_guid] = 1.0 * result_count / row_count[result_guid]
+            treatment_dict[guidkey] = output_dict
+
+        return treatment_dict
 
 
 class RowNormalizationMixin():
@@ -79,34 +94,45 @@ class RowNormSum(BaseTreatment, RowNormalizationMixin):
     explicitly.
     """
 
+    def _build_guid_row_norm(self, input_coinstall_dict):
+        guid_row_norm = {}
+        for _, coinstalls in input_coinstall_dict.items():
+            rowsum = sum(coinstalls.values())
+            for coinstall_guid, coinstall_count in coinstalls.items():
+                if coinstall_guid not in guid_row_norm:
+                    guid_row_norm[coinstall_guid] = []
+                guid_row_norm[coinstall_guid].append(1.0 * coinstall_count / rowsum)
+        return guid_row_norm
+
     def treat(self, input_coinstall_dict):
-        tmp_dict = self._normalize_row_weights(input_coinstall_dict)
-        # TODO
-        guid_row_norm = self._guid_maps['guid_row_norm']
+        guid_row_norm = self._build_guid_row_norm(input_coinstall_dict)
+        treatment_dict = {}
+        for guidkey, coinstalls in input_coinstall_dict.items():
+            output_dict = {}
+            tmp_dict = self._normalize_row_weights(coinstalls)
+            for output_guid, output_guid_weight in tmp_dict.items():
+                guid_row_norm_list = guid_row_norm.get(output_guid, [])
+                norm_sum = sum(guid_row_norm_list)
+                output_dict[output_guid] = output_guid_weight / norm_sum
+            treatment_dict[guidkey] = output_dict
 
-        output_dict = {}
-        for output_guid, output_guid_weight in tmp_dict.items():
-            guid_row_norm_list = guid_row_norm.get(output_guid, [])
-            if len(guid_row_norm_list) == 0:
-                self.logger.warn("Can't find GUID_ROW_NORM data for [{}]".format(output_guid))
-                continue
-            norm_sum = sum(guid_row_norm_list)
-            if norm_sum == 0:
-                self.logger.warn("Sum of GUID_ROW_NORM data for [{}] is zero.".format(output_guid))
-                continue
-            output_dict[output_guid] = output_guid_weight / norm_sum
-
-        return output_dict
+        return treatment_dict
 
 
 class Guidception(BaseTreatment, RowNormalizationMixin):
 
     # Define recursion levels for guid-ception
     RECURSION_LEVELS = 3
+    _coinstallations = {}
 
     def treat(self, input_coinstall_dict):
-        tmp_dict = self._normalize_row_weights(input_coinstall_dict)
-        return self._compute_recursive_results(tmp_dict, self.RECURSION_LEVELS)
+        self._coinstallations = input_coinstall_dict
+        treatment_dict = {}
+        for guidkey, coinstalls in input_coinstall_dict.items():
+            tmp_dict = self._normalize_row_weights(coinstalls)
+            output_dict = self._compute_recursive_results(tmp_dict, self.RECURSION_LEVELS)
+            treatment_dict[guidkey] = output_dict
+        return treatment_dict
 
     def _recursion_penalty(self, level):
         """ Return a factor to apply to the weight for a guid recommendation."""
@@ -132,7 +158,7 @@ class Guidception(BaseTreatment, RowNormalizationMixin):
         # Add in the next level
         level -= 1
         for guid in consolidated_coinstall_dict:
-            next_level_coinstalls = self._addons_coinstallations.get(guid, {})
+            next_level_coinstalls = self._coinstallations.get(guid, {})
             if next_level_coinstalls != {}:
                 # Normalize the next bunch of suggestions
                 next_level_coinstalls = self._normalize_row_weights(next_level_coinstalls)

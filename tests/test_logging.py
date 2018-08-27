@@ -28,7 +28,6 @@ def test_logging(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
 
     default_ctx['coinstall_loader'] = coinstall_loader
     default_ctx['ranking_loader'] = ranking_loader
-    default_ctx['validate_coinstall_graph'] = False
 
     recommender = GuidBasedRecommender(default_ctx)
 

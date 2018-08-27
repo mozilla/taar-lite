@@ -2,9 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import numpy as np
-import pandas as pd
-
 from .treatments import BaseTreatment
 
 
@@ -40,6 +37,12 @@ class GuidGuidCoinstallRecommender:
 
     @classmethod
     def validate_raw_coinstallation_graph(cls, coinstallations):
+        # I have a recollection of problems importing pandas in
+        # production, so I've wrapped the imports here and
+        # currently validation is set off for production by default.
+        import numpy as np
+        import pandas as pd
+
         sorted_guids = sorted(list(coinstallations.keys()))
         df = pd.DataFrame(coinstallations, index=sorted_guids, columns=sorted_guids)
         as_matrix = df.values
@@ -73,7 +76,7 @@ class GuidGuidCoinstallRecommender:
         Recommendation graph is in the same format as the coinstallation graph but the
         numerical values are the weightings as a result of the treatment.
         """
-        return self._recommendation_graph
+        return self._treatment_graph
 
     @property
     def guid_rankings(self):
