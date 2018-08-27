@@ -83,8 +83,7 @@ class GuidGuidCoinstallRecommender:
         """Returns a dictionary with guid keys and install count values"""
         return self._guid_rankings
 
-    @property
-    def recommendation_graph(self, limit):
+    def get_recommendation_graph(self, limit):
         """The recommendation graph is the full output for all addons"""
         rec_graph = {}
         for guid in self.raw_coinstallation_graph:
@@ -110,6 +109,7 @@ class GuidGuidCoinstallRecommender:
 
         """
         if for_guid not in self.treatment_graph:
+            print('here')
             return []
         raw_recommendations = self.treatment_graph[for_guid]
         cleaned_recommendations = self._strip_low_ranked_guids(raw_recommendations)
@@ -130,7 +130,7 @@ class GuidGuidCoinstallRecommender:
                 cleaned_dict[k] = v
         return cleaned_dict
 
-    def _build_sorted_result_list(self, result_dict):
+    def _build_sorted_result_list(self, unranked_recommendations):
         """Takes a dictionary with a format matching the values in the coinstall_dict
         and return a sorted list of results
 
@@ -150,7 +150,7 @@ class GuidGuidCoinstallRecommender:
         # integers.  The third segment is the installation count of
         # the addon but is zero padded.
         result_dict = {}
-        for k, v in result_dict.items():
+        for k, v in unranked_recommendations.items():
             lex_value = "{0:020.10f}.{1:010d}".format(v, self.guid_rankings.get(k, 0))
             result_dict[k] = lex_value
         # Sort the result dictionary in descending order by weight
