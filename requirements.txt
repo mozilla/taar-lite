@@ -1,6 +1,6 @@
 boto3==1.7.2
 Flask==1.0.2
-mozilla-srgutil==0.1.6
+mozilla-srgutil==0.1.9
 numpy==1.14.2
 pandas==0.22.0
 python-decouple==3.1

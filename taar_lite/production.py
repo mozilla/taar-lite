@@ -11,7 +11,7 @@ import numpy as np
 
 from decouple import config
 from srgutil.interfaces import IS3Data, IMozLogging
-from .utils.cache import LazyJSONLoader
+from srgutil.cache import LazyJSONLoader
 from .recommenders.guidguid import GuidGuidCoinstallRecommender
 from .recommenders.treatments import (
     Guidception,

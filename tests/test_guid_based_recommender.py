@@ -1,8 +1,10 @@
 import json
 
-from moto import mock_s3
 import boto3
 import pytest
+
+from srgutil.cache import LazyJSONLoader
+from moto import mock_s3
 
 from taar_lite.production import (
     GuidBasedRecommender,
@@ -10,7 +12,6 @@ from taar_lite.production import (
     ADDON_LIST_KEY,
     GUID_RANKING_KEY,
 )
-from taar_lite.utils.cache import LazyJSONLoader
 
 # The different kinds of results we can expect from TAARlite are
 # listed below.  Note that the ordering of GUIDs returned, and even
