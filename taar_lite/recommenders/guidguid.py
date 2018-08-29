@@ -30,7 +30,7 @@ class GuidGuidCoinstallRecommender:
         self._treatment_cls = treatment_cls
         self._raw_coinstallation_graph = raw_coinstallation_graph
         self._guid_rankings = guid_rankings
-        self._treatment_graph = {}
+        self._treated_graph = {}
         self._min_installs = 0
         if apply_treatment_on_init:
             self.build_treatment_graph()
@@ -76,7 +76,7 @@ class GuidGuidCoinstallRecommender:
         Recommendation graph is in the same format as the coinstallation graph but the
         numerical values are the weightings as a result of the treatment.
         """
-        return self._treatment_graph
+        return self._treated_graph
 
     @property
     def guid_rankings(self):
@@ -95,7 +95,7 @@ class GuidGuidCoinstallRecommender:
         Sub classes may wish to override if more complex computation is required.
         """
         # TODO Is this too coupled? (Am okay leaving for now)
-        self._treatment_graph = self._treatment_cls.treat(self.raw_coinstallation_graph)
+        self._treated_graph = self._treatment_cls.treat(self.raw_coinstallation_graph)
 
     def recommend(self, for_guid, limit):
         """Returns a list of sorted recommendations of length 0 - limit for supplied guid.
