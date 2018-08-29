@@ -1,86 +1,50 @@
 asn1crypto==0.24.0
-attrs==17.4.0
+atomicwrites==1.2.0
+attrs==18.1.0
 aws-xray-sdk==0.95
-boto==2.48.0
-boto3==1.7.2
-botocore==1.10.2
-certifi==2018.1.18
+boto==2.49.0
+boto3==1.8.3
+botocore==1.10.84
+certifi==2018.8.24
 cffi==1.11.5
 chardet==3.0.4
 cookies==2.2.1
-coverage==4.5.1
-cryptography==2.3.1 \
-    --hash=sha256:02602e1672b62e803e08617ec286041cc453e8d43f093a5f4162095506bc0beb \
-    --hash=sha256:10b48e848e1edb93c1d3b797c83c72b4c387ab0eb4330aaa26da8049a6cbede0 \
-    --hash=sha256:17db09db9d7c5de130023657be42689d1a5f60502a14f6f745f6f65a6b8195c0 \
-    --hash=sha256:227da3a896df1106b1a69b1e319dce218fa04395e8cc78be7e31ca94c21254bc \
-    --hash=sha256:2cbaa03ac677db6c821dac3f4cdfd1461a32d0615847eedbb0df54bb7802e1f7 \
-    --hash=sha256:31db8febfc768e4b4bd826750a70c79c99ea423f4697d1dab764eb9f9f849519 \
-    --hash=sha256:4a510d268e55e2e067715d728e4ca6cd26a8e9f1f3d174faf88e6f2cb6b6c395 \
-    --hash=sha256:6a88d9004310a198c474d8a822ee96a6dd6c01efe66facdf17cb692512ae5bc0 \
-    --hash=sha256:76936ec70a9b72eb8c58314c38c55a0336a2b36de0c7ee8fb874a4547cadbd39 \
-    --hash=sha256:7e3b4aecc4040928efa8a7cdaf074e868af32c58ffc9bb77e7bf2c1a16783286 \
-    --hash=sha256:8168bcb08403ef144ff1fb880d416f49e2728101d02aaadfe9645883222c0aa5 \
-    --hash=sha256:8229ceb79a1792823d87779959184a1bf95768e9248c93ae9f97c7a2f60376a1 \
-    --hash=sha256:8a19e9f2fe69f6a44a5c156968d9fc8df56d09798d0c6a34ccc373bb186cee86 \
-    --hash=sha256:8d10113ca826a4c29d5b85b2c4e045ffa8bad74fb525ee0eceb1d38d4c70dfd6 \
-    --hash=sha256:be495b8ec5a939a7605274b6e59fbc35e76f5ad814ae010eb679529671c9e119 \
-    --hash=sha256:dc2d3f3b1548f4d11786616cf0f4415e25b0fbecb8a1d2cd8c07568f13fdde38 \
-    --hash=sha256:e4aecdd9d5a3d06c337894c9a6e2961898d3f64fe54ca920a72234a3de0f9cb3 \
-    --hash=sha256:e79ab4485b99eacb2166f3212218dd858258f374855e1568f728462b0e6ee0d9 \
-    --hash=sha256:f995d3667301e1754c57b04e0bae6f0fa9d710697a9f8d6712e8cca02550910f
-decorator==4.2.1
-docker==3.2.1
-docker-pycreds==0.2.2
+cryptography==2.3.1
+docker==3.5.0
+docker-pycreds==0.3.0
 dockerflow==2018.4.0
 docutils==0.14
-idna==2.6
-ipython==6.3.1
-ipython-genutils==0.2.0
-jedi==0.11.1
+ecdsa==0.13
+future==0.16.0
+idna==2.7
 Jinja2==2.10
 jmespath==0.9.3
 jsondiff==1.1.1
 jsonpickle==0.9.6
 MarkupSafe==1.0
 mock==2.0.0
-more-itertools==4.1.0
-moto==1.3.1
-mozilla-srgutil==0.1.6
-numpy==1.14.2
-pandas==0.22.0
-parso==0.1.1
-pbr==4.0.2
-pexpect==4.4.0
-pickleshare==0.7.4
-pkginfo==1.4.2
-pluggy==0.6.0
-prompt-toolkit==1.0.15
-ptyprocess==0.5.2
-py==1.5.3
+more-itertools==4.3.0
+moto==1.3.5
+mozilla-srgutil==0.1.8
+numpy==1.15.1
+pbr==4.2.0
+pluggy==0.7.1
+py==1.6.0
 pyaml==17.12.1
 pycparser==2.18
-Pygments==2.2.0
-pytest==3.5.0
-pytest-cov==2.5.1
-pytest-cover==3.0.0
-pytest-coverage==0.0
-python-dateutil==2.6.1
-pytz==2018.4
-PyYAML==3.12
-requests==2.18.4
-requests-toolbelt==0.8.0
+pycryptodome==3.6.6
+pytest==3.7.3
+python-dateutil==2.7.3
+python-decouple==3.1
+python-jose==2.0.2
+pytz==2018.5
+PyYAML==3.13
+requests==2.19.1
+responses==0.9.0
 s3transfer==0.1.13
-scipy==1.0.1
-simplegeneric==0.8.1
 six==1.11.0
-tqdm==4.20.0
-traitlets==4.3.2
-twine==1.11.0
-urllib3==1.22
-wcwidth==0.1.7
-websocket-client==0.47.0
+urllib3==1.23
+websocket-client==0.51.0
 Werkzeug==0.14.1
 wrapt==1.10.11
 xmltodict==0.11.0
-python-decouple==3.1
