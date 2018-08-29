@@ -95,7 +95,7 @@ def test_recommender_nonormal(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
 
     guid = "guid-1"
 
-    actual = recommender.recommend({'guid': guid, 'normalize': 'none'})
+    actual = recommender.recommend({'guid': guid, 'normalize': 'none'}, limit=4)
     assert actual == EXPECTED_RESULTS
 
 
@@ -107,7 +107,7 @@ def test_row_count_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
 
-    actual = recommender.recommend({'guid': guid, 'normalize': 'row_count'})
+    actual = recommender.recommend({'guid': guid, 'normalize': 'row_count'}, limit=4)
 
     # Note that guid-9 is not included because it's weight is
     # decreased 50% to 5
@@ -122,9 +122,9 @@ def test_rownorm_sumrownorm(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
 
-    default_actual = recommender.recommend({'guid': guid})
+    default_actual = recommender.recommend({'guid': guid}, limit=4)
 
-    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'})
+    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'}, limit=4)
 
     # Default normalization is rownorm_sum
     assert actual == default_actual
@@ -161,7 +161,7 @@ def test_rowsum_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
 
-    actual = recommender.recommend({'guid': guid, 'normalize': 'row_sum'})
+    actual = recommender.recommend({'guid': guid, 'normalize': 'row_sum'}, limit=4)
     assert 4 == len(actual)
 
     expected_val = 50/155
@@ -179,7 +179,7 @@ def test_guidception(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
 
-    actual = recommender.recommend({'guid': guid, 'normalize': 'guidception'})
+    actual = recommender.recommend({'guid': guid, 'normalize': 'guidception'}, limit=4)
     assert actual == EXPECTED_RESULTS
 
 
@@ -191,7 +191,7 @@ def test_rownorm_sum_tiebreak(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
     recommender = GuidBasedRecommender(default_ctx)
     guid = "guid-2"
 
-    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'})
+    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'}, limit=4)
 
     # Note that the results have weights that are equal, but the tie
     # break is solved by the install rate.
@@ -215,7 +215,7 @@ def test_missing_rownorm_data_issue_31(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RAN
 
     guid = "guid-2"
 
-    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'})
+    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'}, limit=4)
 
     assert actual == EXPECTED_RESULTS
 
@@ -241,7 +241,7 @@ def test_divide_by_zero_rownorm_data_issue_31(default_ctx, TIE_MOCK_DATA, MOCK_G
 
     guid = "guid-2"
 
-    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'})
+    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'}, limit=4)
 
     assert actual == EXPECTED_RESULTS
 
