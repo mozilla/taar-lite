@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name='mozilla-taarlite',
     use_scm_version=False,
-    version='0.2.3',
+    version='0.3.0rc1',
     setup_requires=['setuptools_scm', 'pytest-runner'],
     tests_require=['pytest'],
     include_package_data=True,
@@ -32,5 +32,9 @@ setup(
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Scientific/Engineering :: Information Analysis'
     ],
+    entry_points="""
+    [taarapi_app]
+    app=taar_lite.plugin:configure_plugin
+    """,
     zip_safe=False,
 )
