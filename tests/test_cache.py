@@ -4,7 +4,6 @@ from moto import mock_s3
 from srgutil.interfaces import IClock
 
 from taar_lite.production import (
-    GuidBasedRecommender,
     ADDON_LIST_BUCKET,
     ADDON_LIST_KEY,
     GUID_RANKING_KEY,
