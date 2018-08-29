@@ -1,13 +1,16 @@
 import json
+
 import boto3
+
 from moto import mock_s3
+from srgutil.cache import LazyJSONLoader
+
 from taar_lite.production import (
     GuidBasedRecommender,
     ADDON_LIST_BUCKET,
     ADDON_LIST_KEY,
     GUID_RANKING_KEY,
 )
-from taar_lite.utils.cache import LazyJSONLoader
 
 
 @mock_s3
