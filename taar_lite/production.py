@@ -31,7 +31,7 @@ TAAR_CACHE_EXPIRY = config('TAAR_CACHE_EXPIRY', default=14400, cast=int)
 NORM_MODE_ROWNORMSUM = 'rownorm_sum'
 NORM_MODE_ROWCOUNT = 'row_count'
 NORM_MODE_ROWSUM = 'row_sum'
-#NORM_MODE_GUIDCEPTION = 'guidception'
+NORM_MODE_GUIDCEPTION = 'guidception'
 
 # TODO BirdNote - Delete before merging
 # This only required modest changes to use the new
@@ -131,10 +131,10 @@ class GuidBasedRecommender:
             NORM_MODE_ROWCOUNT: get_recommender(RowCount()),
             NORM_MODE_ROWSUM: get_recommender(RowSum()),
             NORM_MODE_ROWNORMSUM: get_recommender(RowNormSum()),
-            #NORM_MODE_GUIDCEPTION: get_recommender(Guidception()),
+            NORM_MODE_GUIDCEPTION: get_recommender(Guidception()),
         }
 
-    def recommend(self, client_data, limit):
+    def recommend(self, client_data, limit=4):
         """
         TAAR lite will yield 4 recommendations for the AMO page
         """
