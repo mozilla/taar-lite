@@ -111,11 +111,9 @@ class GuidGuidCoinstallRecommender:
 
         """
         if for_guid not in self.treatment_graph:
-            print('here')
             return []
         raw_recommendations = self.treatment_graph[for_guid]
-        cleaned_recommendations = self._strip_low_ranked_guids(raw_recommendations)
-        result_list = self._build_sorted_result_list(cleaned_recommendations)
+        result_list = self._build_sorted_result_list(raw_recommendations)
         return result_list[:limit]
 
     def _build_sorted_result_list(self, unranked_recommendations):

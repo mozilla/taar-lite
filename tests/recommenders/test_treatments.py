@@ -2,12 +2,8 @@ from taar_lite.recommenders.treatments import (
     NoTreatment,
     RowCount,
     RowNormSum,
-    # RowSum,
+    RowSum,
 )
-
-# TODO I think just invoking mock_data makes it harder
-# to see whether these tests are testing the right thing.
-# Propose putting data in tests.
 
 
 def test_no_treatment(mock_data):
@@ -71,4 +67,19 @@ def test_row_norm_sum_treatment(mock_data):
     assert expected_guid_2 == actual_guid_2
 
 
-
+def test_row_sum_treatment(mock_data):
+    # Numerator is the value for the coinstallation
+    # for the looked-up guid.
+    # Denominator is the sum of all coinstallation values
+    # for that guid.
+    expected_guid_2 = {
+        'guid-1': 50 / (5 + 50 + 100),
+        'guid-3': 40 / (100 + 40),
+        'guid-4': 20 / (10 + 20 + 70),
+        'guid-8': 30 / (30 + 100),
+        'guid-9': 10 / (10 + 100),
+    }
+    treatment = RowSum()
+    treated_data = treatment.treat(mock_data)
+    actual_guid_2 = treated_data['guid-2']
+    assert expected_guid_2 == actual_guid_2

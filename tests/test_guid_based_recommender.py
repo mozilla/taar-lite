@@ -63,24 +63,6 @@ RESULTS = {
                     ('guid-4', '000000000.1666666667.0000000007')]
 }
 
-@mock_s3
-def test_rowsum_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
-    EXPECTED_RESULTS = RESULTS['row_sum']
-    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
-
-    recommender = TaarLiteAppResource(default_ctx)
-    guid = "guid-2"
-
-    actual = recommender.recommend({'guid': guid, 'normalize': 'row_sum'}, limit=4)
-    assert 4 == len(actual)
-
-    expected_val = 50/155
-    actual_val = float(actual[0][1][:-11])
-    assert expected_val == pytest.approx(actual_val, rel=1e-3)
-
-    assert actual == EXPECTED_RESULTS
-
-
 @pytest.mark.skip("BIRD: Guidception no longer included in production. Will add tests elsewhere")
 @mock_s3
 def test_guidception(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
@@ -106,52 +88,4 @@ def test_rownorm_sum_tiebreak(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
 
     # Note that the results have weights that are equal, but the tie
     # break is solved by the install rate.
-    assert actual == EXPECTED_RESULTS
-
-
-@pytest.mark.skip("BIRD: I've changed this API, what do we want to test now. (suggest breaking out treatment tests)")
-@mock_s3
-def test_missing_rownorm_data_issue_31(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
-    install_mock_data(TIE_MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
-    recommender = TaarLiteAppResource(default_ctx)
-
-    EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak']
-
-    # Explicitly destroy the guid-4 key in the row_norm data
-    del recommender._guid_maps['guid_row_norm']['guid-4']
-    for i, row in enumerate(EXPECTED_RESULTS):
-        if row[0] == 'guid-4':
-            del EXPECTED_RESULTS[i]
-            break
-
-    guid = "guid-2"
-
-    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'}, limit=4)
-
-    assert actual == EXPECTED_RESULTS
-
-
-@pytest.mark.skip("BIRD: I've changed this API, what do we want to test now. (suggest breaking out treatment tests)")
-@mock_s3
-def test_divide_by_zero_rownorm_data_issue_31(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
-    install_mock_data(TIE_MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
-    recommender = TaarLiteAppResource(default_ctx)
-
-    EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak']
-
-    # Explicitly set the guid-4 key in the row_norm data to have a sum
-    # of zero weights
-    recommender._guid_maps['guid_row_norm']['guid-4'] = [0, 0, 0]
-
-    # Destroy the guid-4 key in the expected results as a sum of 0
-    # will generate a divide by zero error
-    for i, row in enumerate(EXPECTED_RESULTS):
-        if row[0] == 'guid-4':
-            del EXPECTED_RESULTS[i]
-            break
-
-    guid = "guid-2"
-
-    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'}, limit=4)
-
     assert actual == EXPECTED_RESULTS
