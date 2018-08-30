@@ -64,56 +64,6 @@ RESULTS = {
 }
 
 
-def install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx):
-    conn = boto3.resource('s3', region_name='us-west-2')
-
-    conn.create_bucket(Bucket=ADDON_LIST_BUCKET)
-
-    conn.Object(ADDON_LIST_BUCKET, ADDON_LIST_KEY)\
-        .put(Body=json.dumps(MOCK_DATA))
-    conn.Object(ADDON_LIST_BUCKET, GUID_RANKING_KEY)\
-        .put(Body=json.dumps(MOCK_GUID_RANKING))
-
-    coinstall_loader = LazyJSONLoader(default_ctx,
-                                      ADDON_LIST_BUCKET,
-                                      ADDON_LIST_KEY)
-
-    ranking_loader = LazyJSONLoader(default_ctx,
-                                    ADDON_LIST_BUCKET,
-                                    GUID_RANKING_KEY)
-
-    default_ctx['coinstall_loader'] = coinstall_loader
-    default_ctx['ranking_loader'] = ranking_loader
-
-
-@mock_s3
-def test_recommender_nonormal(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
-    EXPECTED_RESULTS = RESULTS['default']
-    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
-
-    recommender = TaarLiteAppResource(default_ctx)
-
-    guid = "guid-1"
-
-    actual = recommender.recommend({'guid': guid, 'normalize': 'none'}, limit=4)
-    assert actual == EXPECTED_RESULTS
-
-
-@mock_s3
-def test_row_count_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
-    EXPECTED_RESULTS = RESULTS['row_count']
-    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
-
-    recommender = TaarLiteAppResource(default_ctx)
-    guid = "guid-2"
-
-    actual = recommender.recommend({'guid': guid, 'normalize': 'row_count'}, limit=4)
-
-    # Note that guid-9 is not included because it's weight is
-    # decreased 50% to 5
-    assert EXPECTED_RESULTS == actual
-
-
 @mock_s3
 def test_rownorm_sumrownorm(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['rownorm_sum']
