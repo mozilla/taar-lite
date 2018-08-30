@@ -4,6 +4,25 @@
 
 from .treatments import BaseTreatment
 
+#    @property
+#    def min_installs(self):
+#        """Returns the minimum number of installs acceptable to keep a guid in the recommendations."""
+#        return self._min_installs
+#
+#    def _strip_low_ranked_guids(self, input_dict):
+#        """Takes a dictionary with a format matching the values in the coinstall_dict
+#        and strips it of keys that do not meet the minimum installs.
+#
+#            In:  {'guid_b': 10, 'guid_c': 13}
+#            Out: {'guid_b': 10, 'guid_c': 13}
+#        """
+#
+#        cleaned_dict = {}
+#        for k, v in input_dict.items():
+#            if self.guid_rankings.get(k, 0) >= self.min_installs:
+#                cleaned_dict[k] = v
+#        return cleaned_dict
+
 
 class GuidGuidCoinstallRecommender:
     """ A recommender class that returns top N addons based on a
@@ -11,7 +30,8 @@ class GuidGuidCoinstallRecommender:
     Accepts:
         - a dict containing coinstalled addons
         - a dict of addon rankins
-        - a instance of a treatment class that transforms the original coinstallation dict
+        - a list of treatments that transform the original coinstallation dict, and will
+          be applied in the order supplied
 
     Provides a recommend method to then return recommendations for a supplied addon.
     Can also return the complete recommendation graph.
@@ -21,17 +41,21 @@ class GuidGuidCoinstallRecommender:
             self,
             raw_coinstallation_graph,
             guid_rankings,
-            treatment_cls,
+            treatments,
             apply_treatment_on_init=True,
             validate_raw_coinstallation_graph=True):
-        assert isinstance(treatment_cls, BaseTreatment)
+
+        for treatment in treatments:
+            assert isinstance(treatment, BaseTreatment)
+
         if validate_raw_coinstallation_graph:
             self.validate_raw_coinstallation_graph(raw_coinstallation_graph)
-        self._treatment_cls = treatment_cls
+
+        self._treatments = treatments
         self._raw_coinstallation_graph = raw_coinstallation_graph
         self._guid_rankings = guid_rankings
         self._treated_graph = {}
-        self._min_installs = 0
+
         if apply_treatment_on_init:
             self.build_treatment_graph()
 
@@ -49,9 +73,9 @@ class GuidGuidCoinstallRecommender:
         assert np.allclose(as_matrix, as_matrix.T, equal_nan=True)
 
     @property
-    def min_installs(self):
-        """Returns the minimum number of installs acceptable to keep a guid in the recommendations."""
-        return self._min_installs
+    def guid_rankings(self):
+        """Returns a dictionary with guid keys and install count values"""
+        return self._guid_rankings
 
     @property
     def raw_coinstallation_graph(self):
@@ -79,9 +103,9 @@ class GuidGuidCoinstallRecommender:
         return self._treated_graph
 
     @property
-    def guid_rankings(self):
-        """Returns a dictionary with guid keys and install count values"""
-        return self._guid_rankings
+    def treatments(self):
+        """Return the list of treatments."""
+        return self._treatments
 
     def get_recommendation_graph(self, limit):
         """The recommendation graph is the full output for all addons"""
@@ -94,8 +118,10 @@ class GuidGuidCoinstallRecommender:
         """Does the work to compute and then set the recommendation graph.
         Sub classes may wish to override if more complex computation is required.
         """
-        # TODO Is this too coupled? (Am okay leaving for now)
-        self._treated_graph = self._treatment_cls.treat(self.raw_coinstallation_graph)
+        new_graph = self.raw_coinstallation_graph
+        for treatment in self.treatments:
+            new_graph = treatment.treat(new_graph)
+        self._treated_graph = new_graph
 
     def recommend(self, for_guid, limit):
         """Returns a list of sorted recommendations of length 0 - limit for supplied guid.
@@ -115,20 +141,6 @@ class GuidGuidCoinstallRecommender:
         cleaned_recommendations = self._strip_low_ranked_guids(raw_recommendations)
         result_list = self._build_sorted_result_list(cleaned_recommendations)
         return result_list[:limit]
-
-    def _strip_low_ranked_guids(self, input_dict):
-        """Takes a dictionary with a format matching the values in the coinstall_dict
-        and strips it of keys that do not meet the minimum installs.
-
-            In:  {'guid_b': 10, 'guid_c': 13}
-            Out: {'guid_b': 10, 'guid_c': 13}
-        """
-
-        cleaned_dict = {}
-        for k, v in input_dict.items():
-            if self.guid_rankings.get(k, 0) >= self.min_installs:
-                cleaned_dict[k] = v
-        return cleaned_dict
 
     def _build_sorted_result_list(self, unranked_recommendations):
         """Takes a dictionary with a format matching the values in the coinstall_dict

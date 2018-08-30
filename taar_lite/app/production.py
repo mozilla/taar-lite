@@ -119,7 +119,7 @@ class TaarLiteAppResource:
             return GuidGuidCoinstallRecommender(
                 self._addons_coinstallations,
                 self._guid_rankings,
-                treatment,
+                [treatment],
                 validate_raw_coinstallation_graph=False
             )
         self._recommenders = {
@@ -142,8 +142,7 @@ class TaarLiteAppResource:
 
         addon_guid = client_data.get('guid')
         normalize = client_data.get('normalize', NORM_MODE_ROWNORMSUM)
-
-        if normalize is not None and normalize not in self._recommenders:
+        if normalize not in self._recommenders:
             # Yield no results if the normalization method is not specified
             self.logger.warn("Invalid normalization parameter detected: [%s]" % normalize)
             return []
