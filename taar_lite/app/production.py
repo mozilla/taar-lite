@@ -71,9 +71,7 @@ class TaarLiteAppResource:
                                                        ADDON_LIST_BUCKET,
                                                        GUID_RANKING_KEY,
                                                        TAAR_CACHE_EXPIRY)
-
         self._init_from_ctx()
-
         # Force access to the JSON models for each request at
         # recommender construction.  This was lifted out of the
         # constructor for the LazyJSONLoader so that the
@@ -81,7 +79,6 @@ class TaarLiteAppResource:
         # the recommender.
         _ = self._addons_coinstallations  # noqa
         _ = self._guid_rankings           # noqa
-
         self.logger.info("GUIDBasedRecommender is initialized")
 
     def _init_from_ctx(self):
@@ -90,13 +87,7 @@ class TaarLiteAppResource:
         if self._addons_coinstallations is None:
             self.logger.error(ADDON_DL_ERR)
 
-        # Compute the floor install incidence that recommended addons
-        # must satisfy.  Take 5% of the mean of all installed addons.
-        self._min_installs = np.mean(list(self._guid_rankings.values())) * 0.05
-
         # Warn if the minimum number of installs drops below 100.
-        if self._min_installs < 100:
-            self.logger.warn("minimum installs threshold low: [%s]" % self._min_installs)
 
     @property
     def _addons_coinstallations(self):
@@ -111,6 +102,10 @@ class TaarLiteAppResource:
         result, refreshed = self._guid_ranking_loader.get()
         if refreshed:
             self.logger.info("Refreshing guid_maps for normalization")
+            # TODO MOVE OUT
+            min_installs = np.mean(list(self._guid_rankings.values())) * 0.05
+            if min_installs < 100:
+                self.logger.warn("minimum installs threshold low: [%s]" % min_installs)
             self._precompute_recommenders()
         return result
 

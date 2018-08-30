@@ -2,8 +2,8 @@ from mock import patch, MagicMock
 
 from taar_lite.app.production import (
     TaarLiteAppResource,
-    NORM_MODE_ROWNORMSUM,
     NORM_MODE_ROWCOUNT,
+    NORM_MODE_ROWNORMSUM,
     NORM_MODE_ROWSUM
 )
 from taar_lite.recommenders.treatments import (
@@ -25,9 +25,9 @@ def test_calling_with_normalize_string_matches(test_context):
         mock_recommender.recommend.assert_called_once_with('a', 4)
 
     assert_recommender_match('none')
-    assert_recommender_match(NORM_MODE_ROWNORMSUM)
-    assert_recommender_match(NORM_MODE_ROWNORM)
     assert_recommender_match(NORM_MODE_ROWCOUNT)
+    assert_recommender_match(NORM_MODE_ROWNORMSUM)
+    assert_recommender_match(NORM_MODE_ROWSUM)
 
 
 def test_calling_with_normalize_as_random_value_returns_empty_list(test_context):
@@ -41,9 +41,9 @@ def test_recommenders_use_their_respective_treatments(test_context):
     recommenders = app_resource._recommenders  # noqa
     assert len(recommenders['none'].treatments) == 1
     assert isinstance(recommenders['none'].treatments[0], NoTreatment)
-    assert len(recommenders[NORM_MODE_ROWNORMSUM].treatments) == 1
-    assert isinstance(recommenders[NORM_MODE_ROWNORMSUM].treatments[0], RowNormSum)
     assert len(recommenders[NORM_MODE_ROWCOUNT].treatments) == 1
     assert isinstance(recommenders[NORM_MODE_ROWCOUNT].treatments[0], RowCount)
+    assert len(recommenders[NORM_MODE_ROWNORMSUM].treatments) == 1
+    assert isinstance(recommenders[NORM_MODE_ROWNORMSUM].treatments[0], RowNormSum)
     assert len(recommenders[NORM_MODE_ROWSUM].treatments) == 1
     assert isinstance(recommenders[NORM_MODE_ROWSUM].treatments[0], RowSum)

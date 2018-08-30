@@ -4,25 +4,6 @@
 
 from .treatments import BaseTreatment
 
-#    @property
-#    def min_installs(self):
-#        """Returns the minimum number of installs acceptable to keep a guid in the recommendations."""
-#        return self._min_installs
-#
-#    def _strip_low_ranked_guids(self, input_dict):
-#        """Takes a dictionary with a format matching the values in the coinstall_dict
-#        and strips it of keys that do not meet the minimum installs.
-#
-#            In:  {'guid_b': 10, 'guid_c': 13}
-#            Out: {'guid_b': 10, 'guid_c': 13}
-#        """
-#
-#        cleaned_dict = {}
-#        for k, v in input_dict.items():
-#            if self.guid_rankings.get(k, 0) >= self.min_installs:
-#                cleaned_dict[k] = v
-#        return cleaned_dict
-
 
 class GuidGuidCoinstallRecommender:
     """ A recommender class that returns top N addons based on a
