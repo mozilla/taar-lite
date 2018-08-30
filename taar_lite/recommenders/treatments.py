@@ -10,7 +10,7 @@ import numpy as np
 
 class BaseTreatment:
 
-    def treat(self, *args, **kwargs):
+    def treat(self, input_dict, **kwargs):
         """Accept a coinstallation graph, and returns a treated graph.
         No constraints are put on the shape of the return graph but the format
         is expected to be the same.
@@ -29,8 +29,8 @@ class BaseTreatment:
 
 class NoTreatment(BaseTreatment):
     """Returns the original coinstallation dict"""
-    def treat(self, coinstalls, *args, **kwargs):
-        return coinstalls
+    def treat(self, input_dict, *args, **kwargs):
+        return input_dict
 
 
 class MinInstallThreshold(BaseTreatment):
@@ -44,13 +44,16 @@ class MinInstallThreshold(BaseTreatment):
         In:  {'guid_b': 10, 'guid_c': 13}
         Out: {'guid_b': 10, 'guid_c': 13}
     """
-    min_installs = None
+    min_installs = 0
 
-    def treat(self, input_dict, ranking_dict, *args, **kwargs):
+    def _set_min_install_threshold(self, ranking_dict):
         # Compute the floor install incidence that recommended addons
         # must satisfy.  Take 5% of the mean of all installed addons.
         self.min_installs = np.mean(list(ranking_dict.values())) * 0.05
 
+    def treat(self, input_dict, **kwargs):
+        ranking_dict = kwargs['ranking_dict']
+        self._set_min_install_threshold(ranking_dict)
         cleaned_dict = {}
         for k, v in input_dict.items():
             if ranking_dict.get(k, 0) >= self.min_installs:
@@ -63,7 +66,7 @@ class RowSum(BaseTreatment):
     coinstallation GUIDs based on the sum of the weights for the
     coinstallation GUIDs.
     """
-    def treat(self, input_dict, *args, **kwargs):
+    def treat(self, input_dict, **kwargs):
         guid_count_map = {}
         for guidkey, coinstalls in input_dict.items():
             for coinstall_guid, coinstall_count in coinstalls.items():
@@ -89,7 +92,7 @@ class RowCount(BaseTreatment):
     proportional to it's overall popularity.
     """
 
-    def treat(self, input_dict, *args, **kwargs):
+    def treat(self, input_dict, **kwargs):
         row_count = {}
         for guidkey, coinstalls in input_dict.items():
             for coinstall_guid, _ in coinstalls.items():
@@ -139,7 +142,7 @@ class RowNormSum(BaseTreatment, RowNormalizationMixin):
                 guid_row_norm[coinstall_guid].append(1.0 * coinstall_count / rowsum)
         return guid_row_norm
 
-    def treat(self, input_dict, *args, **kwargs):
+    def treat(self, input_dict, **kwargs):
         guid_row_norm = self._build_guid_row_norm(input_dict)
         treatment_dict = {}
         for guidkey, coinstalls in input_dict.items():
@@ -160,7 +163,7 @@ class Guidception(BaseTreatment, RowNormalizationMixin):
     RECURSION_LEVELS = 3
     _coinstallations = {}
 
-    def treat(self, input_dict, *args, **kwargs):
+    def treat(self, input_dict, **kwargs):
         self._coinstallations = input_dict
         treatment_dict = {}
         for guidkey, coinstalls in input_dict.items():

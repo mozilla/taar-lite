@@ -2,6 +2,7 @@ from mock import patch, MagicMock
 
 from taar_lite.app.production import (
     TaarLiteAppResource,
+    LoggingMinInstallThreshold,
     NORM_MODE_ROWCOUNT,
     NORM_MODE_ROWNORMSUM,
     NORM_MODE_ROWSUM
@@ -39,11 +40,15 @@ def test_calling_with_normalize_as_random_value_returns_empty_list(test_context)
 def test_recommenders_use_their_respective_treatments(test_context):
     app_resource = TaarLiteAppResource(test_context)
     recommenders = app_resource._recommenders  # noqa
-    assert len(recommenders['none'].treatments) == 1
-    assert isinstance(recommenders['none'].treatments[0], NoTreatment)
-    assert len(recommenders[NORM_MODE_ROWCOUNT].treatments) == 1
-    assert isinstance(recommenders[NORM_MODE_ROWCOUNT].treatments[0], RowCount)
-    assert len(recommenders[NORM_MODE_ROWNORMSUM].treatments) == 1
-    assert isinstance(recommenders[NORM_MODE_ROWNORMSUM].treatments[0], RowNormSum)
-    assert len(recommenders[NORM_MODE_ROWSUM].treatments) == 1
-    assert isinstance(recommenders[NORM_MODE_ROWSUM].treatments[0], RowSum)
+    assert len(recommenders['none'].treatments) == 2
+    assert isinstance(recommenders['none'].treatments[0], LoggingMinInstallThreshold)
+    assert isinstance(recommenders['none'].treatments[1], NoTreatment)
+    assert len(recommenders[NORM_MODE_ROWCOUNT].treatments) == 2
+    assert isinstance(recommenders[NORM_MODE_ROWCOUNT].treatments[0], LoggingMinInstallThreshold)
+    assert isinstance(recommenders[NORM_MODE_ROWCOUNT].treatments[1], RowCount)
+    assert len(recommenders[NORM_MODE_ROWNORMSUM].treatments) == 2
+    assert isinstance(recommenders[NORM_MODE_ROWNORMSUM].treatments[0], LoggingMinInstallThreshold)
+    assert isinstance(recommenders[NORM_MODE_ROWNORMSUM].treatments[1], RowNormSum)
+    assert len(recommenders[NORM_MODE_ROWSUM].treatments) == 2
+    assert isinstance(recommenders[NORM_MODE_ROWSUM].treatments[0], LoggingMinInstallThreshold)
+    assert isinstance(recommenders[NORM_MODE_ROWSUM].treatments[1], RowSum)

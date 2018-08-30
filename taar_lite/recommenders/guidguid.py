@@ -1,6 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
+import numpy as np
+import pandas as pd
 
 from .treatments import BaseTreatment
 
@@ -11,7 +13,7 @@ class GuidGuidCoinstallRecommender:
     Accepts:
         - a dict containing coinstalled addons
         - a dict of addon rankins
-        - a list of treatments that transform the original coinstallation dict, and will
+        - a list of treatments that transform the original coinstall dict, and will
           be applied in the order supplied
 
     Provides a recommend method to then return recommendations for a supplied addon.
@@ -20,46 +22,35 @@ class GuidGuidCoinstallRecommender:
 
     def __init__(
             self,
-            raw_coinstallation_graph,
-            guid_rankings,
+            raw_coinstall_dict,
+            treatment_kwargs,
             treatments,
             apply_treatment_on_init=True,
-            validate_raw_coinstallation_graph=True):
+            validate_raw_coinstall_dict=True):
 
         for treatment in treatments:
             assert isinstance(treatment, BaseTreatment)
 
-        if validate_raw_coinstallation_graph:
-            self.validate_raw_coinstallation_graph(raw_coinstallation_graph)
+        if validate_raw_coinstall_dict:
+            self.validate_coinstall_dict(raw_coinstall_dict)
 
+        self._raw_coinstall_graph = raw_coinstall_dict
+        self._treatment_kwargs = treatment_kwargs
         self._treatments = treatments
-        self._raw_coinstallation_graph = raw_coinstallation_graph
-        self._guid_rankings = guid_rankings
         self._treated_graph = {}
 
         if apply_treatment_on_init:
             self.build_treatment_graph()
 
     @classmethod
-    def validate_raw_coinstallation_graph(cls, coinstallations):
-        # I have a recollection of problems importing pandas in
-        # production, so I've wrapped the imports here and
-        # currently validation is set off for production by default.
-        import numpy as np
-        import pandas as pd
-
-        sorted_guids = sorted(list(coinstallations.keys()))
-        df = pd.DataFrame(coinstallations, index=sorted_guids, columns=sorted_guids)
+    def validate_input_dict(cls, coinstalls):
+        sorted_guids = sorted(list(coinstalls.keys()))
+        df = pd.DataFrame(coinstalls, index=sorted_guids, columns=sorted_guids)
         as_matrix = df.values
         assert np.allclose(as_matrix, as_matrix.T, equal_nan=True)
 
     @property
-    def guid_rankings(self):
-        """Returns a dictionary with guid keys and install count values"""
-        return self._guid_rankings
-
-    @property
-    def raw_coinstallation_graph(self):
+    def raw_coinstall_graph(self):
         """Returns a dictionary with guid keys and a coinstall set values.
 
         Something like this, but with much longer values.
@@ -72,13 +63,13 @@ class GuidGuidCoinstallRecommender:
 
         It must be symmetric.
         """
-        return self._raw_coinstallation_graph
+        return self._raw_coinstall_graph
 
     @property
-    def treatment_graph(self):
+    def treated_graph(self):
         """Returns the recommentaion graph.
 
-        Recommendation graph is in the same format as the coinstallation graph but the
+        Recommendation graph is in the same format as the coinstall graph but the
         numerical values are the weightings as a result of the treatment.
         """
         return self._treated_graph
@@ -88,10 +79,14 @@ class GuidGuidCoinstallRecommender:
         """Return the list of treatments."""
         return self._treatments
 
+    @property
+    def treatment_kwargs(self):
+        return self._treatment_kwargs
+
     def get_recommendation_graph(self, limit):
         """The recommendation graph is the full output for all addons"""
         rec_graph = {}
-        for guid in self.raw_coinstallation_graph:
+        for guid in self.raw_coinstall_graph:
             rec_graph[guid] = self.recommend(guid, limit)
         return rec_graph
 
@@ -99,9 +94,9 @@ class GuidGuidCoinstallRecommender:
         """Does the work to compute and then set the recommendation graph.
         Sub classes may wish to override if more complex computation is required.
         """
-        new_graph = self.raw_coinstallation_graph
+        new_graph = self.raw_coinstall_graph
         for treatment in self.treatments:
-            new_graph = treatment.treat(new_graph)
+            new_graph = treatment.treat(new_graph, **self.treatment_kwargs)
         self._treated_graph = new_graph
 
     def recommend(self, for_guid, limit):

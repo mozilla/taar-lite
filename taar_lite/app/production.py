@@ -6,9 +6,6 @@
 
 Adds in the S3 context with the help of the srgutil Context.
 """
-
-import numpy as np
-
 from decouple import config
 from srgutil.interfaces import IS3Data, IMozLogging
 from srgutil.cache import LazyJSONLoader
@@ -16,6 +13,7 @@ from srgutil.cache import LazyJSONLoader
 from ..recommenders.guidguid import GuidGuidCoinstallRecommender
 from ..recommenders.treatments import (
     NoTreatment,
+    MinInstallThreshold,
     RowCount,
     RowNormSum,
     RowSum
@@ -31,6 +29,16 @@ TAAR_CACHE_EXPIRY = config('TAAR_CACHE_EXPIRY', default=14400, cast=int)
 NORM_MODE_ROWNORMSUM = 'rownorm_sum'
 NORM_MODE_ROWCOUNT = 'row_count'
 NORM_MODE_ROWSUM = 'row_sum'
+
+
+class LoggingMinInstallThreshold(MinInstallThreshold):
+
+    def treat(self, input_dict, **kwargs):
+        output_dict = super().treat(input_dict, **kwargs)
+        if self.min_installs < 100:
+            logger = kwargs['logger']
+            logger.warn("minimum installs threshold low: [%s]" % self.min_installs)
+        return output_dict
 
 
 class TaarLiteAppResource:
@@ -90,7 +98,7 @@ class TaarLiteAppResource:
         # Warn if the minimum number of installs drops below 100.
 
     @property
-    def _addons_coinstallations(self):
+    def _addons_coinstallations(self):  # noqa
         result, refreshed = self._addons_coinstall_loader.get()
         if refreshed:
             self.logger.info("Refreshing guid_maps for normalization")
@@ -102,20 +110,19 @@ class TaarLiteAppResource:
         result, refreshed = self._guid_ranking_loader.get()
         if refreshed:
             self.logger.info("Refreshing guid_maps for normalization")
-            # TODO MOVE OUT
-            min_installs = np.mean(list(self._guid_rankings.values())) * 0.05
-            if min_installs < 100:
-                self.logger.warn("minimum installs threshold low: [%s]" % min_installs)
             self._precompute_recommenders()
         return result
 
     def _precompute_recommenders(self):
         def get_recommender(treatment):
             return GuidGuidCoinstallRecommender(
-                self._addons_coinstallations,
-                self._guid_rankings,
-                [treatment],
-                validate_raw_coinstallation_graph=False
+                raw_coinstall_dict=self._addons_coinstallations,
+                treatment_kwargs={
+                    'ranking_dict': self._guid_rankings,
+                    'logger': self.logger,
+                },
+                treatments=[LoggingMinInstallThreshold(), treatment],
+                validate_raw_coinstall_dict=False
             )
         self._recommenders = {
             'none': get_recommender(NoTreatment()),
@@ -143,8 +150,6 @@ class TaarLiteAppResource:
             return []
 
         result_list = self._recommenders[normalize].recommend(addon_guid, limit)
-
         log_data = (str(addon_guid), [str(r) for r in result_list])
         self.logger.info("Addon: [%s] triggered these recommendation guids: [%s]" % log_data)
-
         return result_list
