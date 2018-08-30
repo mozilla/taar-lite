@@ -2,7 +2,7 @@ from taar_lite.recommenders.treatments import (
     NoTreatment,
     RowCount,
     RowNormSum,
-    RowSum,
+    # RowSum,
 )
 
 # TODO I think just invoking mock_data makes it harder
@@ -36,3 +36,39 @@ def test_row_count_treatment(mock_data):
     treated_data = treatment.treat(mock_data)
     actual_guid_2 = treated_data['guid-2']
     assert expected_guid_2 == actual_guid_2
+
+
+def test_row_norm_sum_treatment(mock_data):
+    """
+    Some notes on verifying:
+
+    Numerator is the row weighted value of guid-1 : 50/150
+    Denominator is the sum of the row weighted value of guid-1 in all
+    other rows
+
+    (guid-2) 50/150
+    (guid-3) 100/210
+    (guid-6) 5/305
+
+    This gives us: [0.3333333333333333,
+                    0.47619047619047616,
+                    0.01639344262295082]
+
+    so the final result should be (50/150) / (50/150 + 100/210 + 5/305)
+
+    That gives a final expected weight for guid-1 to be: 0.403591682
+    """
+    expected_guid_2 = {
+        'guid-1': (50/150) / (50/150 + 100/210 + 5/305),
+        'guid-3': 0.7478143913920645,
+        'guid-4': 0.2803125787748929,
+        'guid-8': 0.3788819875776398,
+        'guid-9': 0.1689750692520776,
+    }
+    treatment = RowNormSum()
+    treated_data = treatment.treat(mock_data)
+    actual_guid_2 = treated_data['guid-2']
+    assert expected_guid_2 == actual_guid_2
+
+
+

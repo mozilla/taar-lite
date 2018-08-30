@@ -63,46 +63,6 @@ RESULTS = {
                     ('guid-4', '000000000.1666666667.0000000007')]
 }
 
-
-@mock_s3
-def test_rownorm_sumrownorm(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
-    EXPECTED_RESULTS = RESULTS['rownorm_sum']
-    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
-
-    recommender = TaarLiteAppResource(default_ctx)
-    guid = "guid-2"
-
-    default_actual = recommender.recommend({'guid': guid}, limit=4)
-
-    actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'}, limit=4)
-
-    # Default normalization is rownorm_sum
-    assert actual == default_actual
-    assert actual == EXPECTED_RESULTS
-    """
-    Some notes on verifying guid-1:
-
-    Numerator is the row weighted value of guid-1 : 50/150
-    Denominator is the sum of the row weighted value of guid-1 in all
-    other rows
-
-    (guid-2) 50/150
-    (guid-3) 100/210
-    (guid-6) 5/305
-
-    This gives us: [0.3333333333333333,
-                    0.47619047619047616,
-                    0.01639344262295082]
-
-    so the final result should be (5/150) / (50/150 + 100/210 + 5/305)
-
-    That gives a final expected weight for guid-1 to be: 0.403591682
-    """
-    expected = 0.403591682
-    actual = float(actual[1][1][:-11])
-    assert expected == pytest.approx(actual, rel=1e-3)
-
-
 @mock_s3
 def test_rowsum_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['row_sum']
