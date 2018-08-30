@@ -5,8 +5,8 @@ import boto3
 from moto import mock_s3
 from srgutil.cache import LazyJSONLoader
 
-from taar_lite.production import (
-    GuidBasedRecommender,
+from taar_lite.app.production import (
+    TaarLiteAppResource,
     ADDON_LIST_BUCKET,
     ADDON_LIST_KEY,
     GUID_RANKING_KEY,
@@ -32,7 +32,7 @@ def test_logging(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     default_ctx['coinstall_loader'] = coinstall_loader
     default_ctx['ranking_loader'] = ranking_loader
 
-    recommender = GuidBasedRecommender(default_ctx)
+    recommender = TaarLiteAppResource(default_ctx)
 
     # These would error out if the object type was incorrect
     recommender.logger.error('foo')

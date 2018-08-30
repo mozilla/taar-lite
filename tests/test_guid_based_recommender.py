@@ -6,8 +6,8 @@ import pytest
 from srgutil.cache import LazyJSONLoader
 from moto import mock_s3
 
-from taar_lite.production import (
-    GuidBasedRecommender,
+from taar_lite.app.production import (
+    TaarLiteAppResource,
     ADDON_LIST_BUCKET,
     ADDON_LIST_KEY,
     GUID_RANKING_KEY,
@@ -91,7 +91,7 @@ def test_recommender_nonormal(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['default']
     install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
 
-    recommender = GuidBasedRecommender(default_ctx)
+    recommender = TaarLiteAppResource(default_ctx)
 
     guid = "guid-1"
 
@@ -104,7 +104,7 @@ def test_row_count_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['row_count']
     install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
 
-    recommender = GuidBasedRecommender(default_ctx)
+    recommender = TaarLiteAppResource(default_ctx)
     guid = "guid-2"
 
     actual = recommender.recommend({'guid': guid, 'normalize': 'row_count'}, limit=4)
@@ -119,7 +119,7 @@ def test_rownorm_sumrownorm(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['rownorm_sum']
     install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
 
-    recommender = GuidBasedRecommender(default_ctx)
+    recommender = TaarLiteAppResource(default_ctx)
     guid = "guid-2"
 
     default_actual = recommender.recommend({'guid': guid}, limit=4)
@@ -158,7 +158,7 @@ def test_rowsum_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['row_sum']
     install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
 
-    recommender = GuidBasedRecommender(default_ctx)
+    recommender = TaarLiteAppResource(default_ctx)
     guid = "guid-2"
 
     actual = recommender.recommend({'guid': guid, 'normalize': 'row_sum'}, limit=4)
@@ -171,12 +171,13 @@ def test_rowsum_recommender(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     assert actual == EXPECTED_RESULTS
 
 
+@pytest.mark.skip("BIRD: Guidception no longer included in production. Will add tests elsewhere")
 @mock_s3
 def test_guidception(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['guidception']
     install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
 
-    recommender = GuidBasedRecommender(default_ctx)
+    recommender = TaarLiteAppResource(default_ctx)
     guid = "guid-2"
 
     actual = recommender.recommend({'guid': guid, 'normalize': 'guidception'}, limit=4)
@@ -188,7 +189,7 @@ def test_rownorm_sum_tiebreak(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak']
     install_mock_data(TIE_MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
 
-    recommender = GuidBasedRecommender(default_ctx)
+    recommender = TaarLiteAppResource(default_ctx)
     guid = "guid-2"
 
     actual = recommender.recommend({'guid': guid, 'normalize': 'rownorm_sum'}, limit=4)
@@ -202,7 +203,7 @@ def test_rownorm_sum_tiebreak(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
 @mock_s3
 def test_missing_rownorm_data_issue_31(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
     install_mock_data(TIE_MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
-    recommender = GuidBasedRecommender(default_ctx)
+    recommender = TaarLiteAppResource(default_ctx)
 
     EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak']
 
@@ -224,7 +225,7 @@ def test_missing_rownorm_data_issue_31(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RAN
 @mock_s3
 def test_divide_by_zero_rownorm_data_issue_31(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
     install_mock_data(TIE_MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
-    recommender = GuidBasedRecommender(default_ctx)
+    recommender = TaarLiteAppResource(default_ctx)
 
     EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak']
 

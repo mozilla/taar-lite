@@ -12,9 +12,9 @@ import numpy as np
 from decouple import config
 from srgutil.interfaces import IS3Data, IMozLogging
 from srgutil.cache import LazyJSONLoader
-from .recommenders.guidguid import GuidGuidCoinstallRecommender
-from .recommenders.treatments import (
-    Guidception,
+
+from ..recommenders.guidguid import GuidGuidCoinstallRecommender
+from ..recommenders.treatments import (
     NoTreatment,
     RowCount,
     RowNormSum,
@@ -31,22 +31,18 @@ TAAR_CACHE_EXPIRY = config('TAAR_CACHE_EXPIRY', default=14400, cast=int)
 NORM_MODE_ROWNORMSUM = 'rownorm_sum'
 NORM_MODE_ROWCOUNT = 'row_count'
 NORM_MODE_ROWSUM = 'row_sum'
-NORM_MODE_GUIDCEPTION = 'guidception'
-
-# TODO BirdNote - Delete before merging
-# This only required modest changes to use the new
-# Recommender and Treatment classes. The main difference is that there's
-# no norm_dict instead there's the _recommenders dict which gets rebuilt
-# whenever json is reloaded and then that is used directly to pull recommendations
 
 
-class GuidBasedRecommender:
-    """ A recommender class that returns top N addons based on a
-    passed addon identifier.  This will load a json file containing
+class TaarLiteAppResource:
+    """This will load a json file containing
     updated top n addons coinstalled with the addon passed as an input
     parameter based on periodically updated  addon-addon
     coinstallation frequency table generated from  Longitdudinal
-    Telemetry data.  This recommender will drive recommendations
+    Telemetry data.
+
+    It constructs three Recommender variants each time those data files change.
+
+    This recommender will drive recommendations
     surfaced on addons.mozilla.org
     """
 
@@ -131,7 +127,6 @@ class GuidBasedRecommender:
             NORM_MODE_ROWCOUNT: get_recommender(RowCount()),
             NORM_MODE_ROWSUM: get_recommender(RowSum()),
             NORM_MODE_ROWNORMSUM: get_recommender(RowNormSum()),
-            NORM_MODE_GUIDCEPTION: get_recommender(Guidception()),
         }
 
     def recommend(self, client_data, limit=4):
@@ -159,25 +154,3 @@ class GuidBasedRecommender:
         self.logger.info("Addon: [%s] triggered these recommendation guids: [%s]" % log_data)
 
         return result_list
-
-    def can_recommend(self, client_data):
-        # TODO - I can't see anywhere this is used.
-
-        # We can't recommend if we don't have our data files.
-        if self._addons_coinstallations is None:
-            return False
-
-        # If we have data coming from other sources, we can use that for
-        # recommending.
-        addon_guid = client_data.get('guid', None)
-        if not isinstance(addon_guid, str):
-            return False
-
-        # Use a dictionary keyed on the query guid
-        if addon_guid not in self._addons_coinstallations.keys():
-            return False
-
-        if not self._addons_coinstallations.get(addon_guid):
-            return False
-
-        return True
