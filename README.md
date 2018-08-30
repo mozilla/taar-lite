@@ -9,6 +9,7 @@ Table of Contents (ToC):
 * [How does it work?](#how-does-it-work)
 * [Current Deployments](#current-deployments)
 * [Building and Running tests](#build-and-run-tests)
+* [Setting up analysis environment](#setting-up-analysis-environment)
 
 ## How does it work?
 Each specific deployment recommendation strategy is implemented through this repo, usually accessible via [taar-api-lite](https://github.com/mozilla/taar-api-lite). 
@@ -42,4 +43,20 @@ This is the list of the current deployments of TAAR-lite:
 	* writes __guid_coinstallation.json__
 
 ## Build and run tests
-WIP
+
+    $ python setup.py test
+
+Or
+
+    $ pip install -r requirements.txt
+    $ pip install -r requirements_test.txt
+    $ py.test
+
+## Setting up analysis environment
+
+conda env
+
+    $ conda create -n taarlite_analysis python=3.6
+    $ conda activate taarlite_analysis
+    $ pip install -r requirements.txt
+    $ conda install --file requirements_analysis.txt

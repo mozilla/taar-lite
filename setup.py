@@ -1,4 +1,4 @@
-from setuptools import find_packages, setup
+from setuptools import setup
 
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
@@ -23,10 +23,9 @@ setup(
     # Packaging
     entry_points="""
     [taarapi_app]
-    app=taar_lite.plugin:configure_plugin
+    app=taar_lite.app.plugin:configure_plugin
     """,
     include_package_data=True,
-    packages=find_packages(exclude=['tests', 'tests/*']),
     use_scm_version=False,
     zip_safe=False,
 
