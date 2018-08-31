@@ -7,7 +7,7 @@ from flask import request
 import json
 
 # TAAR specific libraries
-from taar_lite.production import GuidBasedRecommender
+from .production import TaarLiteAppResource
 from srgutil.context import default_context
 
 # These are configurations that are specific to the TAAR library
@@ -45,7 +45,7 @@ def configure_plugin(app):
             # Lock the context down after we've got basic bits installed
             root_ctx = ctx.child()
 
-            instance = GuidBasedRecommender(root_ctx)
+            instance = TaarLiteAppResource(root_ctx)
             PROXY_MANAGER.setResource(instance)
 
         instance = PROXY_MANAGER.getResource()

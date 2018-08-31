@@ -1,6 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
+import numpy as np
+import pandas as pd
 
 from .treatments import BaseTreatment
 
@@ -11,7 +13,8 @@ class GuidGuidCoinstallRecommender:
     Accepts:
         - a dict containing coinstalled addons
         - a dict of addon rankins
-        - a instance of a treatment class that transforms the original coinstallation dict
+        - a list of treatments that transform the original coinstall dict, and will
+          be applied in the order supplied
 
     Provides a recommend method to then return recommendations for a supplied addon.
     Can also return the complete recommendation graph.
@@ -19,42 +22,43 @@ class GuidGuidCoinstallRecommender:
 
     def __init__(
             self,
-            raw_coinstallation_graph,
-            guid_rankings,
-            treatment_cls,
+            raw_coinstall_dict,
+            treatments,
+            treatment_kwargs=None,
+            tie_breaker_dict=None,
             apply_treatment_on_init=True,
-            validate_raw_coinstallation_graph=True):
-        assert isinstance(treatment_cls, BaseTreatment)
-        if validate_raw_coinstallation_graph:
-            self.validate_raw_coinstallation_graph(raw_coinstallation_graph)
-        self._treatment_cls = treatment_cls
-        self._raw_coinstallation_graph = raw_coinstallation_graph
-        self._guid_rankings = guid_rankings
-        self._treated_graph = {}
-        self._min_installs = 0
+            validate_raw_coinstall_dict=True):
+
+        for treatment in treatments:
+            assert isinstance(treatment, BaseTreatment)
+
+        if validate_raw_coinstall_dict:
+            self.validate_coinstall_dict(raw_coinstall_dict)
+
+        if not tie_breaker_dict:
+            tie_breaker_dict = dict()
+
+        if not treatment_kwargs:
+            treatment_kwargs = dict()
+
+        self._raw_coinstall_graph = raw_coinstall_dict
+        self._tie_breaker_dict = tie_breaker_dict
+        self._treatment_kwargs = treatment_kwargs
+        self._treatments = treatments
+        self._treated_graph = dict()
+
         if apply_treatment_on_init:
             self.build_treatment_graph()
 
     @classmethod
-    def validate_raw_coinstallation_graph(cls, coinstallations):
-        # I have a recollection of problems importing pandas in
-        # production, so I've wrapped the imports here and
-        # currently validation is set off for production by default.
-        import numpy as np
-        import pandas as pd
-
-        sorted_guids = sorted(list(coinstallations.keys()))
-        df = pd.DataFrame(coinstallations, index=sorted_guids, columns=sorted_guids)
+    def validate_coinstall_dict(cls, coinstalls):
+        sorted_guids = sorted(list(coinstalls.keys()))
+        df = pd.DataFrame(coinstalls, index=sorted_guids, columns=sorted_guids)
         as_matrix = df.values
         assert np.allclose(as_matrix, as_matrix.T, equal_nan=True)
 
     @property
-    def min_installs(self):
-        """Returns the minimum number of installs acceptable to keep a guid in the recommendations."""
-        return self._min_installs
-
-    @property
-    def raw_coinstallation_graph(self):
+    def raw_coinstall_graph(self):
         """Returns a dictionary with guid keys and a coinstall set values.
 
         Something like this, but with much longer values.
@@ -67,26 +71,43 @@ class GuidGuidCoinstallRecommender:
 
         It must be symmetric.
         """
-        return self._raw_coinstallation_graph
+        return self._raw_coinstall_graph
 
     @property
-    def treatment_graph(self):
+    def tie_breaker_dict(self):
+        """Returns a dict used for tie-breaking.
+
+        The values are used to order items in the case where the treated
+        values are the same.
+
+        The keys will typically match the keys of the raw_coinstall_graph, but
+        this is not validated, and missing keys are assinged a ranking value of 0
+        in self._build_sorted_result_list.
+        """
+        return self._tie_breaker_dict
+
+    @property
+    def treated_graph(self):
         """Returns the recommentaion graph.
 
-        Recommendation graph is in the same format as the coinstallation graph but the
+        Recommendation graph is in the same format as the coinstall graph but the
         numerical values are the weightings as a result of the treatment.
         """
         return self._treated_graph
 
     @property
-    def guid_rankings(self):
-        """Returns a dictionary with guid keys and install count values"""
-        return self._guid_rankings
+    def treatments(self):
+        """Return the list of treatments."""
+        return self._treatments
+
+    @property
+    def treatment_kwargs(self):
+        return self._treatment_kwargs
 
     def get_recommendation_graph(self, limit):
         """The recommendation graph is the full output for all addons"""
         rec_graph = {}
-        for guid in self.raw_coinstallation_graph:
+        for guid in self.raw_coinstall_graph:
             rec_graph[guid] = self.recommend(guid, limit)
         return rec_graph
 
@@ -94,8 +115,10 @@ class GuidGuidCoinstallRecommender:
         """Does the work to compute and then set the recommendation graph.
         Sub classes may wish to override if more complex computation is required.
         """
-        # TODO Is this too coupled? (Am okay leaving for now)
-        self._treated_graph = self._treatment_cls.treat(self.raw_coinstallation_graph)
+        new_graph = self.raw_coinstall_graph
+        for treatment in self.treatments:
+            new_graph = treatment.treat(new_graph, **self.treatment_kwargs)
+        self._treated_graph = new_graph
 
     def recommend(self, for_guid, limit):
         """Returns a list of sorted recommendations of length 0 - limit for supplied guid.
@@ -108,27 +131,11 @@ class GuidGuidCoinstallRecommender:
             ]
 
         """
-        if for_guid not in self.treatment_graph:
-            print('here')
+        if for_guid not in self.treated_graph:
             return []
-        raw_recommendations = self.treatment_graph[for_guid]
-        cleaned_recommendations = self._strip_low_ranked_guids(raw_recommendations)
-        result_list = self._build_sorted_result_list(cleaned_recommendations)
+        raw_recommendations = self.treated_graph[for_guid]
+        result_list = self._build_sorted_result_list(raw_recommendations)
         return result_list[:limit]
-
-    def _strip_low_ranked_guids(self, input_dict):
-        """Takes a dictionary with a format matching the values in the coinstall_dict
-        and strips it of keys that do not meet the minimum installs.
-
-            In:  {'guid_b': 10, 'guid_c': 13}
-            Out: {'guid_b': 10, 'guid_c': 13}
-        """
-
-        cleaned_dict = {}
-        for k, v in input_dict.items():
-            if self.guid_rankings.get(k, 0) >= self.min_installs:
-                cleaned_dict[k] = v
-        return cleaned_dict
 
     def _build_sorted_result_list(self, unranked_recommendations):
         """Takes a dictionary with a format matching the values in the coinstall_dict
@@ -149,9 +156,10 @@ class GuidGuidCoinstallRecommender:
         # The computed weight takes the first and second segments of
         # integers.  The third segment is the installation count of
         # the addon but is zero padded.
+
         result_dict = {}
         for k, v in unranked_recommendations.items():
-            lex_value = "{0:020.10f}.{1:010d}".format(v, self.guid_rankings.get(k, 0))
+            lex_value = "{0:020.10f}.{1:010d}".format(v, self.tie_breaker_dict.get(k, 0))
             result_dict[k] = lex_value
         # Sort the result dictionary in descending order by weight
         result_list = sorted(result_dict.items(), key=lambda x: x[1], reverse=True)

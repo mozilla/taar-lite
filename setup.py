@@ -1,26 +1,35 @@
-from setuptools import find_packages, setup
+from setuptools import setup
+
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
+with open('requirements_test.txt') as f:
+    test_requirements = f.read().splitlines()
 
 setup(
-    name='mozilla-taarlite',
-    use_scm_version=False,
-    version='0.3.0rc1',
-    setup_requires=['setuptools_scm', 'pytest-runner'],
-    tests_require=['pytest'],
-    include_package_data=True,
-    packages=find_packages(exclude=['tests', 'tests/*']),
-    description='Telemetry-Aware Addon Recommender Lite',
+    # Meta
     author='Mozilla Foundation',
     author_email='fx-data-dev@mozilla.org',
-    url='https://github.com/mozilla/taar-lite',
+    description='Telemetry-Aware Addon Recommender Lite',
+    name='mozilla-taarlite',
     license='MPL 2.0',
-    install_requires=[
-        'mozilla-srgutil',
-        'numpy',
-        'requests',
-        'six',
-        'boto3',
-        'scipy'
-    ],
+    url='https://github.com/mozilla/taar-lite',
+    version='0.3.0rc1',
+
+    # Dependencies
+    install_requires=requirements,
+    tests_require=test_requirements,
+    setup_requires=['setuptools_scm', 'pytest-runner'],
+
+    # Packaging
+    entry_points="""
+    [taarapi_app]
+    app=taar_lite.app.plugin:configure_plugin
+    """,
+    include_package_data=True,
+    use_scm_version=False,
+    zip_safe=False,
+
+    # Classifiers
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Web Environment :: Mozilla',
@@ -29,12 +38,9 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Scientific/Engineering :: Information Analysis'
     ],
-    entry_points="""
-    [taarapi_app]
-    app=taar_lite.plugin:configure_plugin
-    """,
-    zip_safe=False,
 )

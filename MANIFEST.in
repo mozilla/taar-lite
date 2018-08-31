@@ -1,0 +1,8 @@
+recursive-include taar_lite *.py
+
+include LICENSE.txt
+include README.md
+include requirements.txt
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
