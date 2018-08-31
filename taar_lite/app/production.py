@@ -13,7 +13,7 @@ from srgutil.cache import LazyJSONLoader
 from ..recommenders.guidguid import GuidGuidCoinstallRecommender
 from ..recommenders.treatments import (
     NoTreatment,
-    MinInstallThreshold,
+    MinInstallPrune,
     RowCount,
     RowNormSum,
     RowSum
@@ -31,7 +31,7 @@ NORM_MODE_ROWCOUNT = 'row_count'
 NORM_MODE_ROWSUM = 'row_sum'
 
 
-class LoggingMinInstallThreshold(MinInstallThreshold):
+class LoggingMinInstallPrune(MinInstallPrune):
 
     def treat(self, input_dict, **kwargs):
         output_dict = super().treat(input_dict, **kwargs)
@@ -121,7 +121,7 @@ class TaarLiteAppResource:
                     'ranking_dict': self._guid_rankings,
                     'logger': self.logger,
                 },
-                treatments=[LoggingMinInstallThreshold(), treatment],
+                treatments=[LoggingMinInstallPrune(), treatment],
                 validate_raw_coinstall_dict=False
             )
         self._recommenders = {

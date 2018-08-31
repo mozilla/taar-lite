@@ -63,19 +63,6 @@ RESULTS = {
                     ('guid-4', '000000000.1666666667.0000000007')]
 }
 
-@pytest.mark.skip("BIRD: Guidception no longer included in production. Will add tests elsewhere")
-@mock_s3
-def test_guidception(default_ctx, MOCK_DATA, MOCK_GUID_RANKING):
-    EXPECTED_RESULTS = RESULTS['guidception']
-    install_mock_data(MOCK_DATA, MOCK_GUID_RANKING, default_ctx)
-
-    recommender = TaarLiteAppResource(default_ctx)
-    guid = "guid-2"
-
-    actual = recommender.recommend({'guid': guid, 'normalize': 'guidception'}, limit=4)
-    assert actual == EXPECTED_RESULTS
-
-
 @mock_s3
 def test_rownorm_sum_tiebreak(default_ctx, TIE_MOCK_DATA, MOCK_GUID_RANKING):
     EXPECTED_RESULTS = RESULTS['rownorm_sum_tiebreak']

@@ -83,3 +83,5 @@ def test_row_sum_treatment(mock_data):
     treated_data = treatment.treat(mock_data)
     actual_guid_2 = treated_data['guid-2']
     assert expected_guid_2 == actual_guid_2
+
+

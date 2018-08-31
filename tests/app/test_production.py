@@ -2,7 +2,7 @@ from mock import patch, MagicMock
 
 from taar_lite.app.production import (
     TaarLiteAppResource,
-    LoggingMinInstallThreshold,
+    LoggingMinInstallPrune,
     NORM_MODE_ROWCOUNT,
     NORM_MODE_ROWNORMSUM,
     NORM_MODE_ROWSUM
@@ -41,14 +41,14 @@ def test_recommenders_use_their_respective_treatments(test_context):
     app_resource = TaarLiteAppResource(test_context)
     recommenders = app_resource._recommenders  # noqa
     assert len(recommenders['none'].treatments) == 2
-    assert isinstance(recommenders['none'].treatments[0], LoggingMinInstallThreshold)
+    assert isinstance(recommenders['none'].treatments[0], LoggingMinInstallPrune)
     assert isinstance(recommenders['none'].treatments[1], NoTreatment)
     assert len(recommenders[NORM_MODE_ROWCOUNT].treatments) == 2
-    assert isinstance(recommenders[NORM_MODE_ROWCOUNT].treatments[0], LoggingMinInstallThreshold)
+    assert isinstance(recommenders[NORM_MODE_ROWCOUNT].treatments[0], LoggingMinInstallPrune)
     assert isinstance(recommenders[NORM_MODE_ROWCOUNT].treatments[1], RowCount)
     assert len(recommenders[NORM_MODE_ROWNORMSUM].treatments) == 2
-    assert isinstance(recommenders[NORM_MODE_ROWNORMSUM].treatments[0], LoggingMinInstallThreshold)
+    assert isinstance(recommenders[NORM_MODE_ROWNORMSUM].treatments[0], LoggingMinInstallPrune)
     assert isinstance(recommenders[NORM_MODE_ROWNORMSUM].treatments[1], RowNormSum)
     assert len(recommenders[NORM_MODE_ROWSUM].treatments) == 2
-    assert isinstance(recommenders[NORM_MODE_ROWSUM].treatments[0], LoggingMinInstallThreshold)
+    assert isinstance(recommenders[NORM_MODE_ROWSUM].treatments[0], LoggingMinInstallPrune)
     assert isinstance(recommenders[NORM_MODE_ROWSUM].treatments[1], RowSum)

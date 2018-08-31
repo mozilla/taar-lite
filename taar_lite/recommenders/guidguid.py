@@ -43,7 +43,7 @@ class GuidGuidCoinstallRecommender:
             self.build_treatment_graph()
 
     @classmethod
-    def validate_input_dict(cls, coinstalls):
+    def validate_coinstall_dict(cls, coinstalls):
         sorted_guids = sorted(list(coinstalls.keys()))
         df = pd.DataFrame(coinstalls, index=sorted_guids, columns=sorted_guids)
         as_matrix = df.values
@@ -110,9 +110,9 @@ class GuidGuidCoinstallRecommender:
             ]
 
         """
-        if for_guid not in self.treatment_graph:
+        if for_guid not in self.treated_graph:
             return []
-        raw_recommendations = self.treatment_graph[for_guid]
+        raw_recommendations = self.treated_graph[for_guid]
         result_list = self._build_sorted_result_list(raw_recommendations)
         return result_list[:limit]
 
@@ -135,9 +135,12 @@ class GuidGuidCoinstallRecommender:
         # The computed weight takes the first and second segments of
         # integers.  The third segment is the installation count of
         # the addon but is zero padded.
+
+        # TODO I made things flexible to pass in the ranking dict as a treatment
+        # kwarg but we also need it here, so this feels gross now.
         result_dict = {}
         for k, v in unranked_recommendations.items():
-            lex_value = "{0:020.10f}.{1:010d}".format(v, self.guid_rankings.get(k, 0))
+            lex_value = "{0:020.10f}.{1:010d}".format(v, self.treatment_kwargs['ranking_dict'].get(k, 0))
             result_dict[k] = lex_value
         # Sort the result dictionary in descending order by weight
         result_list = sorted(result_dict.items(), key=lambda x: x[1], reverse=True)
