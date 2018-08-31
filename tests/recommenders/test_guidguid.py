@@ -26,8 +26,8 @@ def ranking_dict():
 def recommender(coinstall_dict, ranking_dict):
     return GuidGuidCoinstallRecommender(
         raw_coinstall_dict=coinstall_dict,
-        treatment_kwargs=dict(ranking_dict=ranking_dict),
-        treatments=[NoTreatment()]
+        treatments=[NoTreatment()],
+        tie_breaker_dict=ranking_dict
     )
 
 

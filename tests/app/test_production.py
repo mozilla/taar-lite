@@ -52,3 +52,11 @@ def test_recommenders_use_their_respective_treatments(test_context):
     assert len(recommenders[NORM_MODE_ROWSUM].treatments) == 2
     assert isinstance(recommenders[NORM_MODE_ROWSUM].treatments[0], LoggingMinInstallPrune)
     assert isinstance(recommenders[NORM_MODE_ROWSUM].treatments[1], RowSum)
+
+
+def test_recommenders_have_tie_breaker_dict_set(test_context):
+    app_resource = TaarLiteAppResource(test_context)
+    recommenders = app_resource._recommenders  # noqa
+    tie_breaker_dict = app_resource._guid_rankings  # noqa
+    for norm in ['none', NORM_MODE_ROWCOUNT, NORM_MODE_ROWNORMSUM, NORM_MODE_ROWSUM]:
+        assert recommenders[norm].tie_breaker_dict == tie_breaker_dict

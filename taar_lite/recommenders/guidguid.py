@@ -23,8 +23,9 @@ class GuidGuidCoinstallRecommender:
     def __init__(
             self,
             raw_coinstall_dict,
-            treatment_kwargs,
             treatments,
+            treatment_kwargs=None,
+            tie_breaker_dict=None,
             apply_treatment_on_init=True,
             validate_raw_coinstall_dict=True):
 
@@ -34,10 +35,17 @@ class GuidGuidCoinstallRecommender:
         if validate_raw_coinstall_dict:
             self.validate_coinstall_dict(raw_coinstall_dict)
 
+        if not tie_breaker_dict:
+            tie_breaker_dict = dict()
+
+        if not treatment_kwargs:
+            treatment_kwargs = dict()
+
         self._raw_coinstall_graph = raw_coinstall_dict
+        self._tie_breaker_dict = tie_breaker_dict
         self._treatment_kwargs = treatment_kwargs
         self._treatments = treatments
-        self._treated_graph = {}
+        self._treated_graph = dict()
 
         if apply_treatment_on_init:
             self.build_treatment_graph()
@@ -64,6 +72,19 @@ class GuidGuidCoinstallRecommender:
         It must be symmetric.
         """
         return self._raw_coinstall_graph
+
+    @property
+    def tie_breaker_dict(self):
+        """Returns a dict used for tie-breaking.
+
+        The values are used to order items in the case where the treated
+        values are the same.
+
+        The keys will typically match the keys of the raw_coinstall_graph, but
+        this is not validated, and missing keys are assinged a ranking value of 0
+        in self._build_sorted_result_list.
+        """
+        return self._tie_breaker_dict
 
     @property
     def treated_graph(self):
@@ -136,11 +157,9 @@ class GuidGuidCoinstallRecommender:
         # integers.  The third segment is the installation count of
         # the addon but is zero padded.
 
-        # TODO I made things flexible to pass in the ranking dict as a treatment
-        # kwarg but we also need it here, so this feels gross now.
         result_dict = {}
         for k, v in unranked_recommendations.items():
-            lex_value = "{0:020.10f}.{1:010d}".format(v, self.treatment_kwargs['ranking_dict'].get(k, 0))
+            lex_value = "{0:020.10f}.{1:010d}".format(v, self.tie_breaker_dict.get(k, 0))
             result_dict[k] = lex_value
         # Sort the result dictionary in descending order by weight
         result_list = sorted(result_dict.items(), key=lambda x: x[1], reverse=True)

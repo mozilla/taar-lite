@@ -117,11 +117,12 @@ class TaarLiteAppResource:
         def get_recommender(treatment):
             return GuidGuidCoinstallRecommender(
                 raw_coinstall_dict=self._addons_coinstallations,
+                treatments=[LoggingMinInstallPrune(), treatment],
                 treatment_kwargs={
                     'ranking_dict': self._guid_rankings,
                     'logger': self.logger,
                 },
-                treatments=[LoggingMinInstallPrune(), treatment],
+                tie_breaker_dict=self._guid_rankings,
                 validate_raw_coinstall_dict=False
             )
         self._recommenders = {
