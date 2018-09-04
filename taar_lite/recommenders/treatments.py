@@ -53,11 +53,17 @@ class MinInstallPrune(BaseTreatment):
 
     def treat(self, input_dict, **kwargs):
         ranking_dict = kwargs['ranking_dict']
+        logger = kwargs["logger"]
         self._set_min_install_threshold(ranking_dict)
         cleaned_dict = {}
+        filtered_addons = []
         for k, v in input_dict.items():
             if ranking_dict.get(k, 0) >= self.min_installs:
                 cleaned_dict[k] = v
+            else:
+                filtered_addons.append(k)
+
+        logger.info("Minimum install threshold not met for : {}".format(str(filtered_addons)))
         return cleaned_dict
 
 
