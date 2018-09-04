@@ -48,7 +48,7 @@ class GuidGuidCoinstallRecommender:
         self._treated_graph = dict()
 
         if apply_treatment_on_init:
-            self.build_treatment_graph()
+            self._build_treatment_graph()
 
     @classmethod
     def validate_coinstall_dict(cls, coinstalls):
@@ -111,7 +111,7 @@ class GuidGuidCoinstallRecommender:
             rec_graph[guid] = self.recommend(guid, limit)
         return rec_graph
 
-    def build_treatment_graph(self):
+    def _build_treatment_graph(self):
         """Does the work to compute and then set the recommendation graph.
         Sub classes may wish to override if more complex computation is required.
         """
