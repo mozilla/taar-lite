@@ -13,21 +13,22 @@ class GuidGuidCoinstallRecommender:
     Accepts:
         - a dict containing coinstalled addons
         - a dict of addon rankins
-        - a list of treatments that transform the original coinstall dict, and will
-          be applied in the order supplied
+        - an ordered list of treatments that transform the original
+          coinstall dict, and will be applied in the order supplied
 
     Provides a recommend method to then return recommendations for a supplied addon.
     Can also return the complete recommendation graph.
     """
 
     def __init__(
-            self,
-            raw_coinstall_dict,
-            treatments,
-            treatment_kwargs=None,
-            tie_breaker_dict=None,
-            apply_treatment_on_init=True,
-            validate_raw_coinstall_dict=True):
+        self,
+        raw_coinstall_dict,
+        treatments,
+        treatment_kwargs=None,
+        tie_breaker_dict=None,
+        apply_treatment_on_init=True,
+        validate_raw_coinstall_dict=True,
+    ):
 
         for treatment in treatments:
             assert isinstance(treatment, BaseTreatment)
@@ -159,7 +160,9 @@ class GuidGuidCoinstallRecommender:
 
         result_dict = {}
         for k, v in unranked_recommendations.items():
-            lex_value = "{0:020.10f}.{1:010d}".format(v, self.tie_breaker_dict.get(k, 0))
+            lex_value = "{0:020.10f}.{1:010d}".format(
+                v, self.tie_breaker_dict.get(k, 0)
+            )
             result_dict[k] = lex_value
         # Sort the result dictionary in descending order by weight
         result_list = sorted(result_dict.items(), key=lambda x: x[1], reverse=True)

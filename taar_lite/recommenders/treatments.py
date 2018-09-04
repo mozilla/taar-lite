@@ -9,7 +9,6 @@ import numpy as np
 
 
 class BaseTreatment:
-
     def treat(self, input_dict, **kwargs):
         """Accept a coinstallation graph, and returns a treated graph.
         No constraints are put on the shape of the return graph but the format
@@ -29,6 +28,7 @@ class BaseTreatment:
 
 class NoTreatment(BaseTreatment):
     """Returns the original coinstallation dict"""
+
     def treat(self, input_dict, *args, **kwargs):
         return input_dict
 
@@ -44,6 +44,7 @@ class MinInstallPrune(BaseTreatment):
         In:  {'guid_b': 10, 'guid_c': 13}
         Out: {'guid_b': 10, 'guid_c': 13}
     """
+
     min_installs = 0
 
     def _set_min_install_threshold(self, ranking_dict):
@@ -52,7 +53,7 @@ class MinInstallPrune(BaseTreatment):
         self.min_installs = np.mean(list(ranking_dict.values())) * 0.05
 
     def treat(self, input_dict, **kwargs):
-        ranking_dict = kwargs['ranking_dict']
+        ranking_dict = kwargs["ranking_dict"]
         logger = kwargs["logger"]
         self._set_min_install_threshold(ranking_dict)
         cleaned_dict = {}
@@ -63,7 +64,9 @@ class MinInstallPrune(BaseTreatment):
             else:
                 filtered_addons.append(k)
 
-        logger.info("Minimum install threshold not met for : {}".format(str(filtered_addons)))
+        logger.info(
+            "Minimum install threshold not met for : {}".format(str(filtered_addons))
+        )
         return cleaned_dict
 
 
@@ -72,6 +75,7 @@ class RowSum(BaseTreatment):
     coinstallation GUIDs based on the sum of the weights for the
     coinstallation GUIDs.
     """
+
     def treat(self, input_dict, **kwargs):
         guid_count_map = {}
         for guidkey, coinstalls in input_dict.items():
@@ -115,8 +119,7 @@ class RowCount(BaseTreatment):
         return treatment_dict
 
 
-class RowNormalizationMixin():
-
+class RowNormalizationMixin:
     def _normalize_row_weights(self, coinstall_dict):
         # Compute an intermediary dictionary that is a row normalized
         # co-install. That is - each coinstalled guid weight is
