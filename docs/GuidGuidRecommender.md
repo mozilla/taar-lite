@@ -116,55 +116,6 @@ Candidate lists and relevance scores are then drawn
 from the treated dataset.
 
 
-## Graph representation
-
-It is helpful to discuss candidate lists, relevance scores and treatments
-in terms of of an __add-on relational graph__ structure,
-as much of the intuition behind the treatments
-is drawn from this representation.
-
-An add-on relational graph is a directed graph $G$ in which:
-
-- each vertex is an add-on appearing in the dataset
-- there is an edge from A to B if add-on B is considered _related_ to add-on A
-- each edge has an associated weight
-    indicating the strength of the relationship.
-
-The data used in generating recommendations can be summarized
-by such a graph, where
-an add-on's candidate list corresponds to its set of neighbours in the graph,
-and relevance scores are given by the edge weights.
-A relational graph is induced directly by the coinstallation data,
-considering add-ons related if they are coinstalled,
-and using coinstallation counts as weights.
-Treatments can be thought of as transformations
-which modify add-on relational graphs by
-adding or deleting edges, or adjusting the edge weights.
-
-Note that, since the graph is directed, edges do not necessarily run both ways.
-In other words, we allow for a treatment to produce a graph in which
-A is related to B but B is not related to A,
-for example if it removes edges whose weight falls below a threshold.
-However, since the relation of being coinstalled is symmetric,
-the initial coinstallation graph is undirected.
-
-A relational graph has an associated __adjacency matrix__ $C$,
-in which rows and columns are indexed by add-ons (graph vertices),
-and entry $C_{ij}$ contains the weight for edge $(i,j)$
-if these two add-ons are connected in the graph, or 0 otherwise.
-
-The initial coinstallation dataset is in fact stored
-as a sparse representation of its adjacency matrix.
-Since this graph is undirected, the adjacency matrix is symmetric
-($C_{ij} = C_{ji}$ for any pair $i,j$).
-Also, the row sum (or column sum, by symmetry) for add-on $i$ gives
-its overall number of installs across all profiles considered in the dataset.
-
-
-## Treatments
-
-
-
 # Selecting recommendations
 
 Recommendations for a given add-on A are generated
@@ -184,7 +135,71 @@ The version of the GUID-GUID recommender currently in production
 defaults to requesting 4 recommendations for each add-on,
 which corresponds to the number of display slots on AMO.
 
-__TODO:__ this method of selecting recommendations can be viewed as just another treatment.
+
+# Technical details
+
+## Graph representation
+
+It is helpful to discuss candidate lists, relevance scores and treatments
+in terms of of an __add-on relational graph__ structure,
+as much of the intuition behind the treatments
+is drawn from this representation.
+
+An add-on relational graph is a directed graph $G$ in which:
+
+- each vertex is an add-on appearing in the dataset
+- there is an edge from A to B if add-on B is considered _related_ to add-on A
+- each edge has an associated weight
+    indicating the strength of the relationship.
+
+The data used in generating recommendations can be summarized
+by such a graph, where
+an add-on's candidate list corresponds to its set of neighbours in the graph,
+and relevance scores are given by the edge weights.
+In this setting:
+
+- A relational graph is induced directly by the coinstallation data,
+    considering add-ons related if they are coinstalled,
+    and using coinstallation counts as weights.
+- Treatments can be thought of as transformations
+    which modify add-on relational graphs by
+    adding or deleting edges, or adjusting the edge weights.
+- The final selection of recommendations can itself be viewed as a treatment,
+    which outputs a graph containing, for each add-on A,
+    an edge from A to each of A's N recommendations.
+
+The recommendation algorithm can be rephrased
+in terms of this representation as follows:
+
+1. Load the input data and create the __coinstallation graph__.
+2. Apply each of the specified treatments in turn to the coinstallation graph,
+    resulting in the __treated graph__.
+3. Apply the recommendation selection treatment to the treated graph
+    to produce the __recommendation graph__.
+
+Note that, since the graph is directed, edges do not necessarily run both ways.
+In other words, we allow for a treatment to produce a graph in which
+A is related to B but B is not related to A,
+for example if it removes edges whose weight falls below a threshold.
+However, since the relation of being coinstalled is symmetric,
+the initial coinstallation graph is undirected.
+
+A relational graph has an associated __adjacency matrix__ $C$,
+in which rows and columns are indexed by add-ons (graph vertices),
+and entry $C_{ij}$ contains the weight for edge $(i,j)$
+if these two add-ons are connected in the graph, or 0 otherwise.
+The initial coinstallation dataset is in fact stored
+as a sparse representation of its adjacency matrix.
+Since this graph is undirected, the adjacency matrix is symmetric
+($C_{ij} = C_{ji}$ for any pair $i,j$).
+Also, the row sum (or column sum, by symmetry) for add-on $i$ gives
+its overall number of installs across all profiles considered in the dataset.
+
+
+## Treatments
+
+
+
 
 
 # Quality and health metrics
