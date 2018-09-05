@@ -29,7 +29,7 @@ to the coinstallation data, candidate lists, and recommendations,
 to evaluate the overall health of the system
 and the quality of recommendations.
 
-The recommender system is implemented in the [`GuidGuidCoinstallRecommender`](../taar_lite/recommenders/guidguid.py#L10) class,
+The recommender system is implemented by the [`GuidGuidCoinstallRecommender`](../taar_lite/recommenders/guidguid.py#L10) class,
 which is instantiated by the [TaarLiteAppResource](../taar_lite/app/production.py#L44).
 
 
@@ -199,7 +199,7 @@ its overall number of installs across all profiles considered in the dataset.
 
 # Treatments
 
-The following [treatments](../taar_lite/recommenders/treatments.py) are implemented for the GuidGuidCoinstallRecommender.
+The following [treatments](../taar_lite/recommenders/treatments.py) are implemented for the `GuidGuidCoinstallRecommender`.
 
 
 ## Normalizations
@@ -213,8 +213,9 @@ it will likely have the highest raw count out all add-ons coinstalled with A,
 and thus would top the list of recommendations.
 Furthermore, such popular add-ons are likely to appear
 on most add-ons' coinstall lists.
-Thus, we transform coinstallation counts in such a way as to discount
+Thus, we seek to transform coinstallation counts in such a way as to discount
 the effect of overall popularity.
+This corresponds to adjusting the edge weights in the graph representation.
 
 Note that, even though the raw coinstallation graph is undirected
 (with a symmetric adjacency matrix),
@@ -260,7 +261,7 @@ of which some may be coinstalled more widely than others.
 This treatment is implemented as [`RowCount`](../taar_lite/recommenders/treatments.py#L87).
 
 
-### Total install normalization
+### Total relevance normalization
 
 This treatment accounts for the popularity of an add-on in terms of
 its overall total number of installations,
@@ -273,27 +274,75 @@ the total number of installations of B.
 
 Given the adjacency matrix $C$,
 the treatment divides each each entry $C_{ab}$
-by the column sum of column $b$.
+by the column sum for column $b$.
 In terms of the graph representation,
 the weight on each edge (A,B) leaving A is divided by
-the sum of the weights on edges entering B.
+the sum of the weights on all edges entering B.
 
 Intuitively, the normalized count for (A,B) represents
 the proportion of B's total installs contributed by profiles
 that also have A installed.
 Thus, the highest-scoring add-ons B are those which are more likely
 to be coinstalled with A than with other add-ons.
+We would expect this normalization to do a better job
+than the [add-on count normalization](#add-on-count-normalization)
+at controlling for the heavy skew of the distribution
+of overall install counts.
+
+As discussed [above](#graph-representation), in the raw coinstallation matrix,
+row sums are equal to column sums for each add-on
+and represent the total number of installs.
+For a general add-on relational graph, the matrix may no longer be symmetric,
+but the intuition behind the normalization still applies.
+In this case, we can view the column sum for B
+as an __aggregate relevance score__ over the universe of add-ons,
+as it is the sum of relevance scores for B
+in relation to each other add-on A.
+The normalization converts raw relevance scores to
+the proportion of aggregate relevance derived from add-on A.
+
 
 This treatment is implemented as [`RowSum`](../taar_lite/recommenders/treatments.py#L64).
 
 
 ### Proportional total normalization
 
-__TODO__
+This treatment is a rescaled version of the [total relevance normalization](#total-relevance-normalization).
+Rather than total installs, popularity is quantified in terms of
+the proportion of coinstalls associated with each add-on.
+Here, the assumption is that more relevant recommendations tend to account for
+a higher proportion out of the given add-on's coinstallations than it does
+for other add-ons.
 
+Given add-on A, the coinstallation count for (A,B) for each add-on B
+is first divided by the sum of all A's coinstallation counts.
+The total relevance normalization is then applied to the resulting proportions.
+
+Given the adjacency matrix $C$,
+the treatment first divides each each entry $C_{ab}$
+by the row sum for row $a$,
+and then divides each entry by the column sum for column $b$
+in the resulting matrix.
+In terms of the graph representation,
+the weight on each edge (A,B) leaving A is first divided by
+the sum of the weights on all edges leaving A,
+and then the resulting edge weight is divided by
+the sum of the weights on all edges entering B.
+
+Intuitively, the first step converts coinstallation counts for A
+to the proportion of coinstallations of A allocated to each add-on B.
+In the case of general relevance scores, we can think of the row sum for A
+as a __relevance budget__,
+ie. the total amount of relevance it has available to assign to other add-ons.
+The first division has the effect of normalizing each add-on's
+relevance budget to 1.
+The next step then normalizes each coinstalled add-on's
+resulting aggregate relevance to 1.
 
 This treatment is implemented as [`RowNormSum`](../taar_lite/recommenders/treatments.py#L126).
 
+
+## Graph pruning
 
 
 # Quality and health metrics
