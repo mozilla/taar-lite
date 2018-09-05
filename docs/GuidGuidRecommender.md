@@ -380,5 +380,22 @@ The auxiliary score list is supplied as the keyword arg `ranking_dict`,
 a dict mapping add-on GUIDs to overall relevance scores.
 
 
+### Recommendation selection
+
+The procedure for [selecting recommendations](#selecting-recommendations)
+it itself just another graph pruning treatment.
+
+For each add-on A in the graph, the edges leaving A are ordered
+by decreasing relevance score (weight),
+and all but those edges with the top N highest weights are deleted
+from the graph.
+
+The output of this treatment is the final recommendation graph,
+in which the recommendations for a given add-on A
+can be read off as A's neighbours.
+As these final recommendations are considered unordered,
+we ignore the final edge weights, and can optionally set them to all to 1.
+
+
 # Quality and health metrics
 
