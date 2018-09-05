@@ -122,6 +122,7 @@ class GuidGuidCoinstallRecommender:
         self._treated_graph = new_graph
 
     def recommend(self, for_guid, limit):
+    def recommend(self, for_guid, limit, **extra_args):
         """Returns a list of sorted recommendations of length 0 - limit for supplied guid.
 
         Result list is a list of tuples with the lex ranking string. e.g.

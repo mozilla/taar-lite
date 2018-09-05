@@ -145,12 +145,15 @@ class TaarLiteAppResource:
 
         addon_guid = client_data.get('guid')
         normalize = client_data.get('normalize', NORM_MODE_ROWNORMSUM)
+        platform = client_data.get("platform", Platform.ALL)
         if normalize not in self._recommenders:
             # Yield no results if the normalization method is not specified
             self.logger.warn("Invalid normalization parameter detected: [%s]" % normalize)
             return []
 
-        result_list = self._recommenders[normalize].recommend(addon_guid, limit)
+        result_list = self._recommenders[normalize].recommend(
+            addon_guid, limit, platform=platform
+        )
         log_data = (str(addon_guid), [str(r) for r in result_list])
         self.logger.info("Addon: [%s] triggered these recommendation guids: [%s]" % log_data)
         return result_list
