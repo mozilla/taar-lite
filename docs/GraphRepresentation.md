@@ -6,7 +6,7 @@ in terms of an __add-on relational graph__ structure,
 as much of the intuition behind the treatments
 is drawn from this representation.
 
-An add-on relational graph is a directed graph $G$ in which:
+An add-on relational graph is a directed graph $G = (V,E)$ in which:
 
 - each vertex is an add-on appearing in the dataset
 - there is an edge from A to B if add-on B is considered _related_ to add-on A
@@ -55,6 +55,64 @@ Since this graph is undirected, the adjacency matrix is symmetric
 ($C_{ij} = C_{ji}$ for any pair $i,j$).
 Also, the row sum (or column sum, by symmetry) for add-on $i$ gives
 its overall number of installs across all profiles considered in the dataset.
+
+
+## Graph properties
+
+For reference, we now list some of the main properties of
+each of the milestone relational graphs listed above.
+
+
+### Coinstallation graph
+
+The graph induced by the raw coinstallation counts has the following properties:
+
+- It is undirected, ie. each edge runs both ways.
+- Its vertex degree may take values from 1 to $|V|$,
+    the overall number of add-ons in the graph.
+    In other words, every vertex has at least one incident edge.
+- Edge weights correspond to the raw coinstallation count.
+- It may or may not be connected.
+    However, there are no unreachable (singleton) vertices.
+
+
+### Treated graph
+
+The result of applying the treatments to the coinstallation graph
+has these properties:
+
+- It is directed, as treatments generally do not operate on edges symmetrically.
+    In particular, some or all pairs of vertices may be connected by edges
+    running in both directions but bearing different weights.
+- Both vertex in-degree and out-degree may take values from 0 to $|V|$,
+    and may be different.
+    In general, a treated vertex may have any number of incident edges.
+- Edge weights represent general relevance scores, which may not be symmetric.
+    The weight on edge (A,B) represents the relevance of B in relation to A,
+    which may be different from the relevance of A in relation to B.
+- It may or may not be strongly or weakly connected.
+
+
+### Recommendation graph
+
+The recommendation graph is obtained by dropping all edges except those
+leading to each add-on's top N most relevant recommendations,
+with these properties:
+
+- It is directed.
+    For example, that B is a recommendation for A does not imply that
+    A is a recommendation for B.
+- Vertex in-degree may take values from 0 to $|V|$,
+    meaning that any number of add-ons may recommend the current vertex add-on.
+    Vertex out-degree is constrained to be at most N, representing the add-ons
+    recommended for the current vertex add-on.
+- Edge weights no longer play a role.
+    Without loss of generality, they can all be set to 1.
+- It may or may not be strongly or weakly connected.
+    In particular, there may be a number of add-ons which have outgoing edges
+    but no incoming edges,
+    in that they have associated recommendations,
+    but are never recommended from other add-ons.
 
 
 # Treatments
