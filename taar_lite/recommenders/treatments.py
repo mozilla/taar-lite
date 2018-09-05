@@ -6,9 +6,17 @@ so the coupling is clear. I think the structure roughly makes sense, but the
 implementation could be tidier / less error prone.
 """
 import numpy as np
+from srgutil.cache import LazyJSONLoader
 
 
 class BaseTreatment:
+    def can_recommend(for_guid, **extra_args):
+        """ Some treatments may explicitly not provide any kind of
+        recommendations for a given guid or platform type.
+        `can_recommend`.
+        """
+        return True
+
     def treat(self, input_dict, **kwargs):
         """Accept a coinstallation graph, and returns a treated graph.
         No constraints are put on the shape of the return graph but the format
@@ -163,4 +171,50 @@ class RowNormSum(BaseTreatment, RowNormalizationMixin):
                 output_dict[output_guid] = output_guid_weight / norm_sum
             treatment_dict[guidkey] = output_dict
 
+        return treatment_dict
+
+
+class Platform(BaseTreatment):
+
+    ALL = "all"
+    ANDROID = "android"
+    LINUX = "linux"
+    MAC = "mac"
+    WIN = "windows"
+
+    CHOICES = [ALL, ANDROID, LINUX, MAC, WIN]
+
+    def __init__(self, ctx, platform, addon_db=None):
+        self._ctx = ctx
+
+        assert platform in self.CHOICES
+        self._platform = platform
+
+        if addon_db is not None:
+            self._addon_db = addon_db
+        else:
+            bucket = "telemetry-parquet"
+            s3_key = "telemetry-ml/addon_recommender/extended_addons_database.json"
+            self._addon_db = LazyJSONLoader(self._ctx, bucket, s3_key)
+
+    def match_platform(self, guid, platform):
+        try:
+            return (
+                self._addon_db[guid]["current_version"]["files"][0]["platform"]
+                == platform
+            )
+        except Exception:
+            return self.CHOICES["ALL"]
+
+    def treat(self, input_dict, **kwargs):
+        treatment_dict = {}
+        for guid, coinstall_dict in input_dict.items():
+            if self.match_platform(guid, self._platform):
+                coinstalls = [
+                    c_guid
+                    for c_guid in coinstall_dict.keys()
+                    if self.match_platform(c_guid, self._platform)
+                ]
+                if len(coinstalls) > 0:
+                    treatment_dict[guid] = coinstalls
         return treatment_dict
