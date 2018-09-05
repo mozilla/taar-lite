@@ -14,4 +14,4 @@ install:
 - pip install -r requirements_test.txt
 
 script:
-- py.test --cov taar_lite --cov-report term-missing
+- python setup.py test
