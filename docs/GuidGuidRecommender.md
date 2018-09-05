@@ -230,6 +230,7 @@ Although these normalizations are described
 in terms of the raw coinstallation matrix,
 they can be applied as treatments to any add-on relational graph.
 
+
 ### Add-on count normalization
 
 This treatment accounts for the popularity of an add-on in terms of
@@ -343,6 +344,40 @@ This treatment is implemented as [`RowNormSum`](../taar_lite/recommenders/treatm
 
 
 ## Graph pruning
+
+Another class of treatments we may wish to apply involves modifying
+the vertices or edges of the relational graph themselves,
+possibly as a function of the edge weights.
+For example, we may wish to remove vertices or edges that fall below
+a minimum relevance threshold, in order to avoid recommending rare add-ons.
+Also, we may wish to ensure certain properties of the graph as a whole.
+It is possible for a user visiting AMO to "walk" the recommendation graph
+by clicking through a chain of subsequent recommendations.
+Although the recommendations themselves are memoryless,
+in that they only depend on the current add-on,
+we are interesting in optimizing the quality of experience
+for such users as well,
+such as not returning to a previous add-on in a short number of steps.
+
+
+### Minimum relevance pruning
+
+This treatment removes add-on vertices whose relevance score is lower
+than a given threshold,
+under the assumption that candidates with such low relevance
+would not make good recommendations, even if there no candidates
+with higher relevance.
+
+The relevance threshold is computed based on an auxiliary list
+of overall relevance scores for each add-on.
+It is chosen as 5% of the mean of all the overall scores.
+Then, if any add-on has a relevance score below this value,
+its vertex (and all incident edges) is removed from the relational graph.
+Equivalently, the corresponding row and column are removed from the matrix $C$.
+
+This treatment is implemented as [`MinInstallPrune`](../taar_lite/recommenders/treatments.py#L36).
+The auxiliary score list is supplied as the keyword arg `ranking_dict`,
+a dict mapping add-on GUIDs to overall relevance scores.
 
 
 # Quality and health metrics
