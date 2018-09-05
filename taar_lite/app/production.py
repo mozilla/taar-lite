@@ -16,27 +16,30 @@ from ..recommenders.treatments import (
     MinInstallPrune,
     RowCount,
     RowNormSum,
-    RowSum
+    RowSum,
+    Platform,
 )
 
-ADDON_LIST_BUCKET = 'telemetry-parquet'
-ADDON_LIST_KEY = 'taar/lite/guid_coinstallation.json'
-GUID_RANKING_KEY = 'taar/lite/guid_install_ranking.json'
+ADDON_LIST_BUCKET = "telemetry-parquet"
+ADDON_LIST_KEY = "taar/lite/guid_coinstallation.json"
+GUID_RANKING_KEY = "taar/lite/guid_install_ranking.json"
 
-ADDON_DL_ERR = "Cannot download addon coinstallation file {}".format(ADDON_LIST_KEY)   # noqa
-TAAR_CACHE_EXPIRY = config('TAAR_CACHE_EXPIRY', default=14400, cast=int)
+ADDON_DL_ERR = "Cannot download addon coinstallation file {}".format(
+    ADDON_LIST_KEY
+)  # noqa
+TAAR_CACHE_EXPIRY = config("TAAR_CACHE_EXPIRY", default=14400, cast=int)
 
-NORM_MODE_ROWNORMSUM = 'rownorm_sum'
-NORM_MODE_ROWCOUNT = 'row_count'
-NORM_MODE_ROWSUM = 'row_sum'
+# These are defined as optional arguments to the recommend method
+NORM_MODE_ROWNORMSUM = "rownorm_sum"
+NORM_MODE_ROWCOUNT = "row_count"
+NORM_MODE_ROWSUM = "row_sum"
 
 
 class LoggingMinInstallPrune(MinInstallPrune):
-
     def treat(self, input_dict, **kwargs):
         output_dict = super().treat(input_dict, **kwargs)
         if self.min_installs < 100:
-            logger = kwargs['logger']
+            logger = kwargs["logger"]
             logger.warn("minimum installs threshold low: [%s]" % self.min_installs)
         return output_dict
 
@@ -64,21 +67,19 @@ class TaarLiteAppResource:
         self._ctx = ctx
         assert IS3Data in self._ctx
 
-        if 'coinstall_loader' in self._ctx:
-            self._addons_coinstall_loader = self._ctx['coinstall_loader']
+        if "coinstall_loader" in self._ctx:
+            self._addons_coinstall_loader = self._ctx["coinstall_loader"]
         else:
-            self._addons_coinstall_loader = LazyJSONLoader(self._ctx,
-                                                           ADDON_LIST_BUCKET,
-                                                           ADDON_LIST_KEY,
-                                                           TAAR_CACHE_EXPIRY)
+            self._addons_coinstall_loader = LazyJSONLoader(
+                self._ctx, ADDON_LIST_BUCKET, ADDON_LIST_KEY, TAAR_CACHE_EXPIRY
+            )
 
-        if 'ranking_loader' in self._ctx:
-            self._guid_ranking_loader = self._ctx['ranking_loader']
+        if "ranking_loader" in self._ctx:
+            self._guid_ranking_loader = self._ctx["ranking_loader"]
         else:
-            self._guid_ranking_loader = LazyJSONLoader(self._ctx,
-                                                       ADDON_LIST_BUCKET,
-                                                       GUID_RANKING_KEY,
-                                                       TAAR_CACHE_EXPIRY)
+            self._guid_ranking_loader = LazyJSONLoader(
+                self._ctx, ADDON_LIST_BUCKET, GUID_RANKING_KEY, TAAR_CACHE_EXPIRY
+            )
         self._init_from_ctx()
         # Force access to the JSON models for each request at
         # recommender construction.  This was lifted out of the
@@ -86,11 +87,11 @@ class TaarLiteAppResource:
         # precomputation of the normalization tables can be done in
         # the recommender.
         _ = self._addons_coinstallations  # noqa
-        _ = self._guid_rankings           # noqa
+        _ = self._guid_rankings  # noqa
         self.logger.info("GUIDBasedRecommender is initialized")
 
     def _init_from_ctx(self):
-        self.logger = self._ctx[IMozLogging].get_logger('taarlite')
+        self.logger = self._ctx[IMozLogging].get_logger("taarlite")
 
         if self._addons_coinstallations is None:
             self.logger.error(ADDON_DL_ERR)
@@ -119,14 +120,15 @@ class TaarLiteAppResource:
                 raw_coinstall_dict=self._addons_coinstallations,
                 treatments=[LoggingMinInstallPrune(), treatment],
                 treatment_kwargs={
-                    'ranking_dict': self._guid_rankings,
-                    'logger': self.logger,
+                    "ranking_dict": self._guid_rankings,
+                    "logger": self.logger,
                 },
                 tie_breaker_dict=self._guid_rankings,
-                validate_raw_coinstall_dict=False
+                validate_raw_coinstall_dict=False,
             )
+
         self._recommenders = {
-            'none': get_recommender(NoTreatment()),
+            "none": get_recommender(NoTreatment()),
             NORM_MODE_ROWCOUNT: get_recommender(RowCount()),
             NORM_MODE_ROWSUM: get_recommender(RowSum()),
             NORM_MODE_ROWNORMSUM: get_recommender(RowNormSum()),
@@ -141,19 +143,24 @@ class TaarLiteAppResource:
         # start of the request to update normalization tables if
         # required.
         _ = self._addons_coinstallations  # noqa
-        _ = self._guid_rankings           # noqa
+        _ = self._guid_rankings  # noqa
 
-        addon_guid = client_data.get('guid')
-        normalize = client_data.get('normalize', NORM_MODE_ROWNORMSUM)
+        addon_guid = client_data.get("guid")
+        normalize = client_data.get("normalize", NORM_MODE_ROWNORMSUM)
         platform = client_data.get("platform", Platform.ALL)
+
         if normalize not in self._recommenders:
             # Yield no results if the normalization method is not specified
-            self.logger.warn("Invalid normalization parameter detected: [%s]" % normalize)
+            self.logger.warn(
+                "Invalid normalization parameter detected: [%s]" % normalize
+            )
             return []
 
         result_list = self._recommenders[normalize].recommend(
             addon_guid, limit, platform=platform
         )
         log_data = (str(addon_guid), [str(r) for r in result_list])
-        self.logger.info("Addon: [%s] triggered these recommendation guids: [%s]" % log_data)
+        self.logger.info(
+            "Addon: [%s] triggered these recommendation guids: [%s]" % log_data
+        )
         return result_list

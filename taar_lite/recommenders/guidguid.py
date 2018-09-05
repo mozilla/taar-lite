@@ -3,8 +3,9 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 import numpy as np
 import pandas as pd
+import functools
 
-from .treatments import BaseTreatment
+from .treatments import BaseTreatment, Platform
 
 
 class GuidGuidCoinstallRecommender:
@@ -121,7 +122,17 @@ class GuidGuidCoinstallRecommender:
             new_graph = treatment.treat(new_graph, **self.treatment_kwargs)
         self._treated_graph = new_graph
 
-    def recommend(self, for_guid, limit):
+    def can_recommend(self, for_guid, **extra_args):
+        """Checks if a particular recommender can provide
+        recommendations.  This is primarily used by the
+        CompositeGuidGuidCoinstallRecommender.
+        """
+        return functools.reduce(
+            lambda x, y: x.can_recommend(for_guid, **extra_args)
+            and y.can_recommend(for_guid, **extra_args),
+            self._treatments,
+        )
+
     def recommend(self, for_guid, limit, **extra_args):
         """Returns a list of sorted recommendations of length 0 - limit for supplied guid.
 
@@ -168,3 +179,46 @@ class GuidGuidCoinstallRecommender:
         # Sort the result dictionary in descending order by weight
         result_list = sorted(result_dict.items(), key=lambda x: x[1], reverse=True)
         return result_list
+
+
+class CompositeGuidGuidCoinstallRecommender:
+    """
+    This class composes multiple GuidGuid recommenders together
+    when the recommendation may come from one of several different
+    treatment graphs
+    """
+
+    def __init__(self, ctx, children):
+        self._recommenders = children
+
+    def recommend(self, for_guid, limit, **extra_args):
+        for child_recommender in self._recommenders:
+            if child_recommender.can_recommend(for_guid, **extra_args):
+                return child_recommender.recommend(for_guid, limit, **extra_args)
+
+
+def build_platform_composite(
+    ctx,
+    raw_coinstall_dict,
+    treatments,
+    treatment_kwargs=None,
+    tie_breaker_dict=None,
+    apply_treatment_on_init=True,
+    validate_raw_coinstall_dict=True,
+    platforms=[Platform.ALL],
+):
+
+    recommenders = []
+    for p in platforms:
+        treatments.append(Platform(ctx, p))
+        recommenders.append(
+            GuidGuidCoinstallRecommender(
+                raw_coinstall_dict,
+                treatments,
+                treatment_kwargs,
+                tie_breaker_dict,
+                apply_treatment_on_init,
+                validate_raw_coinstall_dict,
+            )
+        )
+    return CompositeGuidGuidCoinstallRecommender(ctx, recommenders)
