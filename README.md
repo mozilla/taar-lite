@@ -31,7 +31,7 @@ This is the list of the current deployments of TAAR-lite:
 	* Writes __extended_addons_database.json__
 * [taar_amowhitelisy.py](https://github.com/mozilla/python_mozetl/blob/master/mozetl/taar/taar_amowhitelist.py) 
 	* Scheduled to run daily, dependent on successful completion of [taar_amodump.py](https://github.com/mozilla/python_mozetl/blob/master/mozetl/taar/taar_amodump.py) 
-	* Filters the add-ons contained in __extended_addons_database.json__
+	* Filters the add-ons contained in __extended_addons_database.json__:
 		* removes legacy add-ons
 		* removes Web Extensions with a rating < 3.0
 		* removes Web Extensions uploaded less than 60 days ago
@@ -39,8 +39,11 @@ This is the list of the current deployments of TAAR-lite:
 	* Writes __whitelist_addons_database.json__
 * [taar_lite_guidguid.py](https://github.com/mozilla/python_mozetl/blob/master/mozetl/taar/taar_lite_guidguid.py)
 	* Computes the coinstallation rate of each whitelisted add-on with other whitelisted add-ons for a sample of Firefox clients
-	* Removes rare combinations of coinstallations 
-	* writes __guid_coinstallation.json__
+    * Further filters the whitelisted add-ons:
+        * removes system add-ons
+        * removes disabled add-ons (although there shouldn't be any in the client data)
+        * removes sideloaded add-ons
+	* Writes __guid_coinstallation.json__
 
 ## Build and run tests
 
