@@ -3,7 +3,7 @@
 
 The GUID-GUID coinstallation recommender system generates recommendations
 for add-ons which are similar to a given add-on,
-where similarity is based on the number of profiles
+where similarity is based on the number of Firefox profiles
 which have both add-ons installed.
 
 As recommendations are only determined from
@@ -16,7 +16,8 @@ Recommendations are generated as follows:
 1. The [input data](#input-data),
     consisting of coinstallation counts for each pair of add-ons,
     is loaded from a precomputed file.
-2. For each add-on, we determine a [__candidate list__](#generating-the-scored-candidate-lists) of "related" add-ons,
+2. For each add-on, we determine a [__candidate list__](#generating-the-scored-candidate-lists)
+    of "related" add-ons,
     together with associated __relevance scores__,
     based on the coinstallation data.
 3. Recommendations for a given add-on are [selected](#selecting-recommendations)

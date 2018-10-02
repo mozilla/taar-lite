@@ -2,11 +2,13 @@
 # Graph representation
 
 It is helpful to discuss candidate lists, relevance scores and treatments
+(as described in the [GUID-GUID recommender docs](./GuidGuidRecommender.md))
 in terms of an __add-on relational graph__ structure,
 as much of the intuition behind the treatments
 is drawn from this representation.
 
-An add-on relational graph is a directed graph $G = (V,E)$ in which:
+An add-on relational graph is a graph $G = (V,E)$,
+which may or may not be directed, and in which:
 
 - each vertex is an add-on appearing in the dataset
 - there is an edge from A to B if add-on B is considered _related_ to add-on A
@@ -15,17 +17,24 @@ An add-on relational graph is a directed graph $G = (V,E)$ in which:
 
 The data used in generating recommendations can be summarized
 by such a graph, where
-an add-on's candidate list corresponds to its set of neighbours in the graph,
-and relevance scores are given by the edge weights.
+an add-on's [candidate list](./GuidGuidRecommender.md#generating-the-scored-candidate-lists)
+corresponds to its set of neighbours in the graph,
+with relevance scores given by the edge weights.
 In this setting:
 
-- A relational graph is induced directly by the coinstallation data,
+- The [coinstallation data](./GuidGuidRecommender.md#input-data)
+    can be represented as an undirected relational graph,
     considering add-ons related if they are coinstalled,
-    and using coinstallation counts as weights.
-- Treatments can be thought of as transformations
+    and using coinstallation counts
+    (or some metric derived from these)
+    as weights.
+- [Treatments](./GuidGuidRecommender.md#generating-the-scored-candidate-lists)
+    can be thought of as transformations
     which modify add-on relational graphs by
     adding or deleting edges, or adjusting the edge weights.
-- The final selection of recommendations can itself be viewed as a treatment,
+    They are discussed in detail [below](#treatments).
+- The final [selection of recommendations](./GuidGuidRecommender.md#selecting-recommendations)
+    can itself be viewed as a treatment,
     which outputs a graph containing, for each add-on A,
     an edge from A to each of A's N recommendations.
 
@@ -38,7 +47,8 @@ in terms of this representation as follows:
 3. Apply the recommendation selection treatment to the treated graph
     to produce the __recommendation graph__.
 
-Note that, since the graph is directed, edges do not necessarily run both ways.
+Note that, in cases where the graph is directed,
+edges do not necessarily run both ways.
 In other words, we allow for a treatment to produce a graph in which
 A is related to B but B is not related to A,
 for example if it removes edges whose weight falls below a threshold.
@@ -50,11 +60,13 @@ in which rows and columns are indexed by add-ons (graph vertices),
 and entry $C_{ij}$ contains the weight for edge $(i,j)$
 if these two add-ons are connected in the graph, or 0 otherwise.
 The initial coinstallation dataset is in fact stored
-as a sparse representation of its adjacency matrix.
+as a [sparse representation](./GuidGuidRecommender.md#input-data)
+of its adjacency matrix.
 Since this graph is undirected, the adjacency matrix is symmetric
 ($C_{ij} = C_{ji}$ for any pair $i,j$).
 Also, the row sum (or column sum, by symmetry) for add-on $i$ gives
-its overall number of installs across all profiles considered in the dataset.
+its overall number of installs across all Firefox profiles
+considered in the dataset.
 
 
 ## Graph properties
@@ -199,7 +211,7 @@ the weight on each edge (A,B) leaving A is divided by
 the sum of the weights on all edges entering B.
 
 Intuitively, the normalized count for (A,B) represents
-the proportion of B's total installs contributed by profiles
+the proportion of B's total installs contributed by Firefox profiles
 that also have A installed.
 Thus, the highest-scoring add-ons B are those which are more likely
 to be coinstalled with A than with other add-ons.
