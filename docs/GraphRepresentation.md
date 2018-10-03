@@ -210,7 +210,7 @@ the (in-)degree of the neighbour B.
 Intuitively, the total number of coinstalls with B (column sum)
 divided by the number of add-ons B is coinstalled with (number of non-zero entries)
 represents the average number of coinstallations per coinstalled add-on.
-The normalized count for (A,B) can be thought of as the contribution
+The normalized score for (A,B) can be thought of as the contribution
 to this average from add-on A.
 This normalization is most effective when comparing add-ons B
 with similar total installation counts,
@@ -222,14 +222,17 @@ This treatment is implemented as [`RowCount`](../taar_lite/recommenders/treatmen
 ### Total relevance normalization
 
 This treatment accounts for the popularity of an add-on in terms of
-its overall total number of installations,
+its overall total number of coinstallations,
 under the assumption that
-__the more often an add-on is installed overall,
+__the more often an add-on is coinstalled with other add-ons overall,
 the less likely it is to be relevant__.
 
 For each add-on B coinstalled with a given add-on A,
 the coinstallation count for (A,B) is divided by
-the total number of installations of B.
+the total number of coinstallations of B across all other add-ons.
+(This will be greater than the total number of installations of B
+if some Firefox profiles have more than two add-ons,
+since these profiles will get counted more than once.)
 
 Given the adjacency matrix $C$,
 the treatment divides each each entry $C_{ab}$
@@ -238,8 +241,8 @@ In terms of the graph representation,
 the weight on each edge (A,B) leaving A is divided by
 the sum of the weights on all edges entering B.
 
-Intuitively, the normalized count for (A,B) represents
-the proportion of B's total installs contributed by Firefox profiles
+Intuitively, the normalized score for (A,B) represents
+the proportion of B's total coinstalls contributed by Firefox profiles
 that also have A installed.
 Thus, out of all the add-ons related to A,
 those with the highest normalized scores
@@ -252,7 +255,7 @@ of overall install counts.
 
 As discussed [above](#graph-representation), in the raw coinstallation matrix,
 row sums are equal to column sums for each add-on
-and represent the total number of installs.
+and represent the total number of coinstalls.
 For a general add-on relational graph, the matrix may no longer be symmetric,
 but the intuition behind the normalization still applies.
 In this case, we can view the column sum for B
@@ -269,7 +272,7 @@ This treatment is implemented as [`RowSum`](../taar_lite/recommenders/treatments
 ### Proportional total normalization
 
 This treatment is a rescaled version of the [total relevance normalization](#total-relevance-normalization).
-Rather than total installs, popularity is quantified in terms of
+Rather than total coinstalls, popularity is quantified in terms of
 the proportion of coinstalls associated with each add-on.
 Here, the assumption is that
 __more relevant recommendations tend to account for
