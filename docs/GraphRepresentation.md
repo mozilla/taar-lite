@@ -219,6 +219,71 @@ of which some may be coinstalled more widely than others.
 This treatment is implemented as [`RowCount`](../taar_lite/recommenders/treatments.py#L87).
 
 
+#### Example
+
+Suppose we have a universe of 101 add-ons,
+with the following coinstallation data:
+
+```python
+coinstalls = {
+    # A is coinstalled with every other add-on
+    'A': {'B': 50, 'C': 50, 'D': 50, ...},
+    'B': {'A': 50, 'C': 5, 'D': 1},
+    'C': {'A': 50, 'B': 5},
+    'D': {'A': 50, 'B': 1},
+    # Each other add-on is coinstalled at least with A,
+    # and possibly with other add-ons outside of B, C, D.
+    ...
+}
+```
+
+The associated adjacency matrix is:
+
+|     |A    |B    |C    |D    |...  |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|A    |     |50   |50   |50   |...  |
+|B    |50   |     |5    |1    |     |
+|C    |50   |5    |     |     |     |
+|D    |50   |1    |     |     |     |
+|...  |...  |     |     |     |...  |
+
+To apply the normalization, we count the number of non-zero entries
+down each column of the matrix:
+
+```python
+non_zero_counts = {
+    'A': 100, # A is co-installed with 100 add-ons
+    'B': 3,   # B is co-installed with 3 add-ons
+    'C': 2,   # C is co-installed with 2 add-ons
+    'D': 2,   # D is co-installed with 2 add-ons
+    ...
+}
+```
+
+and divide each column of the matrix by the corresponding count:
+
+|     |A    |B    |C    |D    |...  |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|A    |     |16.7 |25   |25   |...  |
+|B    |0.5  |     |2.5  |0.5  |     |
+|C    |0.5  |1.67 |     |     |     |
+|D    |0.5  |0.33 |     |     |     |
+|...  |...  |     |     |     |...  |
+
+Observe:
+
+- The relevance of A to each other add-on
+    (the value in column A for each other row),
+    has been downweighted.
+- A is no longer the most relevant add-on for B and C (looking along their rows).
+- The interplay between B, C, and D has risen to the surface.
+- The relevances of other add-ons to A (along row A)
+    are no longer all equal, as those coinstalled with more add-ons
+    have been downweighted.
+- The matrix is no longer symmetric, eg. the relevance of B to A (entry (A,B))
+  is no longer the same as the relevance of A to B (entry (B,A)).
+
+
 ### Total relevance normalization
 
 This treatment accounts for the popularity of an add-on in terms of
