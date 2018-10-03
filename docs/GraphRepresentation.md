@@ -144,10 +144,14 @@ with these properties:
 A __treatment__ is a function which takes an add-on relational graph,
 applies a transformation and returns the result,
 which is also an add-on relational graph.
-Hence, multiple treatments can be applied in sequence, ie. composed,
+Hence, multiple treatments can be applied in sequence,
+ie. the treatment functions can be composed,
 to form a general graph transformation workflow.
 
-The following [treatments](../taar_lite/recommenders/treatments.py) are implemented for the `GuidGuidCoinstallRecommender`.
+The following treatments are [implemented](../taar_lite/recommenders/treatments.py)
+for the `GuidGuidCoinstallRecommender`.
+We categorize them into [normalizations](#normalizations)
+and [graph pruning](#graph-pruning).
 
 
 ## Normalizations
@@ -178,6 +182,10 @@ Although these normalizations are described
 in terms of the raw coinstallation matrix,
 they can be applied as treatments to any add-on relational graph.
 
+The currently implemented normalization treatments are [add-on count](#add-on-count-normalization),
+[total relevance](#total-relevance-normalization),
+and [proportional total](#proportional-total-normalization).
+
 
 ### Add-on count normalization
 
@@ -185,8 +193,8 @@ This treatment accounts for the popularity of an add-on in terms of
 how widely it is coinstalled,
 ie. how many different add-ons it appears coinstalled with.
 It reweights the graph based on the hypothesis:
-the more widely coinstalled an add-on is,
-the less likely it is to be a relevant recommendation.
+__the more add-ons a given add-on is coinstalled with,
+the less likely it is to be a relevant recommendation__.
 
 For each add-on B coinstalled with a given add-on A,
 the coinstallation count for (A,B) is divided by
@@ -215,8 +223,9 @@ This treatment is implemented as [`RowCount`](../taar_lite/recommenders/treatmen
 
 This treatment accounts for the popularity of an add-on in terms of
 its overall total number of installations,
-under the assumption that the more widely used an add-on is,
-the less likely it is to be relevant.
+under the assumption that
+__the more often an add-on is installed overall,
+the less likely it is to be relevant__.
 
 For each add-on B coinstalled with a given add-on A,
 the coinstallation count for (A,B) is divided by
@@ -262,9 +271,10 @@ This treatment is implemented as [`RowSum`](../taar_lite/recommenders/treatments
 This treatment is a rescaled version of the [total relevance normalization](#total-relevance-normalization).
 Rather than total installs, popularity is quantified in terms of
 the proportion of coinstalls associated with each add-on.
-Here, the assumption is that more relevant recommendations tend to account for
+Here, the assumption is that
+__more relevant recommendations tend to account for
 a higher proportion out of the given add-on's coinstallations than it does
-for other add-ons.
+for other add-ons__.
 
 Given add-on A, the coinstallation count for (A,B) for each add-on B
 is first divided by the sum of all A's coinstallation counts.
@@ -297,7 +307,7 @@ This treatment is implemented as [`RowNormSum`](../taar_lite/recommenders/treatm
 ## Graph pruning
 
 Another class of treatments we may wish to apply involves modifying
-the vertices or edges of the relational graph themselves,
+the sets of vertices or edges of the relational graph themselves,
 possibly as a function of the edge weights.
 For example, we may wish to remove vertices or edges that fall below
 a minimum relevance threshold, in order to avoid recommending rare add-ons.
@@ -309,15 +319,21 @@ in that they only depend on the current add-on,
 we are interesting in optimizing the quality of experience
 for such users as well,
 such as not returning to a previous add-on in a short number of steps.
+This can be accomplished by adding or removing edges between certain vertices.
 
+The currently implemented graph pruning treatments are [minimum relevance](#minimum-relevance-pruning)
+and [recommendation selection](#recommendation-selection).
 
 ### Minimum relevance pruning
 
 This treatment removes add-on vertices whose relevance score is lower
 than a given threshold,
-under the assumption that candidates with such low relevance
-would not make good recommendations, even if there no candidates
-with higher relevance.
+under the assumption that
+__candidates with such low relevance would not make good recommendations,
+even if there are no candidates with higher relevance__.
+When relevance is given by coinstallation counts,
+this also helps to preserve privacy
+by dropping rare add-on combinations from the recommendation candidate lists.
 
 The relevance threshold is computed based on an auxiliary list
 of overall relevance scores for each add-on.
