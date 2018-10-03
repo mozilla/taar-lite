@@ -11,9 +11,25 @@ An add-on relational graph is a graph $G = (V,E)$,
 which may or may not be directed, and in which:
 
 - each vertex is an add-on appearing in the dataset
-- there is an edge from A to B if add-on B is considered _related_ to add-on A
-- each edge has an associated weight
-    indicating the strength of the relationship.
+- there is an edge from A to B if add-on B is considered __related__ to add-on A
+- each edge from A to B has an associated weight
+    indicating the strength of the relationship:
+    the __relevance__ of B to A.
+
+Note that add-on relation and relevance may not be symmetric,
+in which case the graph is directed.
+A treatment may produce a graph in which
+A is related to B but B is not related to A,
+for example if it removes edges whose weight falls below a threshold.
+The corresponding graph would have an edge running from B to A
+but not the other way.
+It is also possible for both add-ons to be related to each other,
+but for the relevance of B to A to be different from
+the relevance of A to B.
+In this case, the graph has edges between A and B in both directions,
+but with different weights.
+However, since the relation of _being coinstalled_ is symmetric,
+the initial coinstallation graph is undirected.
 
 The data used in generating recommendations can be summarized
 by such a graph, where
@@ -47,14 +63,6 @@ in terms of this representation as follows:
 3. Apply the recommendation selection treatment to the treated graph
     to produce the __recommendation graph__.
 
-Note that, in cases where the graph is directed,
-edges do not necessarily run both ways.
-In other words, we allow for a treatment to produce a graph in which
-A is related to B but B is not related to A,
-for example if it removes edges whose weight falls below a threshold.
-However, since the relation of being coinstalled is symmetric,
-the initial coinstallation graph is undirected.
-
 A relational graph has an associated __adjacency matrix__ $C$,
 in which rows and columns are indexed by add-ons (graph vertices),
 and entry $C_{ij}$ contains the weight for edge $(i,j)$
@@ -73,6 +81,7 @@ considered in the dataset.
 
 For reference, we now list some of the main properties of
 each of the milestone relational graphs listed above.
+A glossary of graph theory terms is available [here](https://en.wikipedia.org/wiki/Glossary_of_graph_theory_terms).
 
 
 ### Coinstallation graph
@@ -93,7 +102,8 @@ The graph induced by the raw coinstallation counts has the following properties:
 The result of applying the treatments to the coinstallation graph
 has these properties:
 
-- It is directed, as treatments generally do not operate on edges symmetrically.
+- It is directed in general,
+    as treatments may not operate on edges symmetrically.
     In particular, some or all pairs of vertices may be connected by edges
     running in both directions but bearing different weights.
 - Both vertex in-degree and out-degree may take values from 0 to $|V|$,
@@ -111,12 +121,14 @@ The recommendation graph is obtained by dropping all edges except those
 leading to each add-on's top N most relevant recommendations,
 with these properties:
 
+- It is a strict subset of the treated graph,
+    with the same vertices and a subset of the edges.
 - It is directed.
     For example, that B is a recommendation for A does not imply that
     A is a recommendation for B.
 - Vertex in-degree may take values from 0 to $|V|$,
     meaning that any number of add-ons may recommend the current vertex add-on.
-    Vertex out-degree is constrained to be at most N, representing the add-ons
+- Vertex out-degree is constrained to be at most N, representing the add-ons
     recommended for the current vertex add-on.
 - Edge weights no longer play a role.
     Without loss of generality, they can all be set to 1.
@@ -128,6 +140,12 @@ with these properties:
 
 
 # Treatments
+
+A __treatment__ is a function which takes an add-on relational graph,
+applies a transformation and returns the result,
+which is also an add-on relational graph.
+Hence, multiple treatments can be applied in sequence, ie. composed,
+to form a general graph transformation workflow.
 
 The following [treatments](../taar_lite/recommenders/treatments.py) are implemented for the `GuidGuidCoinstallRecommender`.
 
@@ -165,8 +183,9 @@ they can be applied as treatments to any add-on relational graph.
 
 This treatment accounts for the popularity of an add-on in terms of
 how widely it is coinstalled,
-ie. how many different add-ons it appears coinstalled with,
-under the assumption that the more widely coinstalled an add-on is,
+ie. how many different add-ons it appears coinstalled with.
+It reweights the graph based on the hypothesis:
+the more widely coinstalled an add-on is,
 the less likely it is to be a relevant recommendation.
 
 For each add-on B coinstalled with a given add-on A,
@@ -213,7 +232,9 @@ the sum of the weights on all edges entering B.
 Intuitively, the normalized count for (A,B) represents
 the proportion of B's total installs contributed by Firefox profiles
 that also have A installed.
-Thus, the highest-scoring add-ons B are those which are more likely
+Thus, out of all the add-ons related to A,
+those with the highest normalized scores
+are those which are more likely
 to be coinstalled with A than with other add-ons.
 We would expect this normalization to do a better job
 than the [add-on count normalization](#add-on-count-normalization)
@@ -313,7 +334,7 @@ a dict mapping add-on GUIDs to overall relevance scores.
 ### Recommendation selection
 
 The procedure for [selecting recommendations](./GuidGuidRecommender.md#selecting-recommendations)
-it itself just another graph pruning treatment.
+is itself just another graph pruning treatment.
 
 For each add-on A in the graph, the edges leaving A are ordered
 by decreasing relevance score (weight),
@@ -326,8 +347,4 @@ in which the recommendations for a given add-on A
 can be read off as A's neighbours.
 As these final recommendations are considered unordered,
 we ignore the final edge weights, and can optionally set them to all to 1.
-
-
-# Quality and health metrics
-
 

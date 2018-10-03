@@ -28,7 +28,7 @@ Further technical details on each of these steps
 are provided on [this page](./GraphRepresentation.md).
 
 Once the recommender has been trained,
-we apply various [metrics](./GraphRepresentation.md#quality-and-health-metrics)
+we apply various metrics
 to the coinstallation data, candidate lists, and recommendations,
 to evaluate the overall health of the system
 and the quality of recommendations.
