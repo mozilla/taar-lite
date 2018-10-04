@@ -380,7 +380,7 @@ and divide each column of the matrix by the corresponding sum:
 |B    |0.9  |     |0.2  |0.3  |     |
 |C    |0.09 |0.045|     |0.61 |     |
 |D    |0.009|0.045|0.4  |     |0.83 |
-|E    |0.001|     |     |0.03 |...  |
+|E    |0.001|     |     |0.03 |     |
 
 Observe:
 
@@ -435,6 +435,77 @@ The next step then normalizes each coinstalled add-on's
 resulting aggregate relevance to 1.
 
 This treatment is implemented as [`RowNormSum`](../taar_lite/recommenders/treatments.py#L126).
+
+
+#### Example
+
+Consider the same coinstallation data over 5 add-ons as above:
+
+```python
+coinstalls = {
+    'A': {'B': 1000, 'C': 100, 'D': 10, 'E': 1},
+    'B': {'A': 1000, 'C': 50, 'D': 50},
+    'C': {'A': 100, 'B': 50, 'D': 100},
+    'D': {'A': 10, 'B': 50, 'C': 100, 'E': 5},
+    'E': {'A': 1, 'D': 5}
+}
+```
+
+The associated adjacency matrix is:
+
+|     |A    |B    |C    |D    |E    |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|A    |     |1000 |100  |10   |1    |
+|B    |1000 |     |50   |50   |     |
+|C    |100  |50   |     |100  |     |
+|D    |10   |50   |100  |     |5    |
+|E    |1    |     |     |5    |     |
+
+To apply the normalization, the first step is to sum the values
+along each row of the matrix:
+
+```python
+row_sums = {
+    'A': 1111, # A has 1111 coinstallations
+    'B': 1100, # B has 1100 coinstallations
+    'C': 250,  # C has 250 coinstallations
+    'D': 165,  # D has 165 coinstallations
+    'E': 6     # E has 6 coinstallations
+}
+```
+
+and divide each row of the matrix by the corresponding sum:
+
+|     |A    |B    |C    |D    |E    |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|A    |     |0.9  |0.09 |0.009|0.001|
+|B    |0.91 |     |0.045|0.045|     |
+|C    |0.4  |0.2  |     |0.4  |     |
+|D    |0.061|0.3  |0.61 |     |0.03 |
+|E    |0.167|     |     |0.83 |     |
+
+We then apply the total relevance normalization to this matrix,
+summing the values down each column:
+
+```python
+{
+    'A': 1.538,
+    'B': 1.4,
+    'C': 0.745,
+    'D': 1.284,
+    'E': 0.031
+}
+```
+
+and dividing each column by its corresponding sum:
+
+|     |A    |B    |C    |D    |E    |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|A    |     |0.64 |0.12 |0.007|0.032|
+|B    |0.59 |     |0.06 |0.035|     |
+|C    |0.26 |0.14 |     |0.31 |     |
+|D    |0.04 |0.21 |0.82 |     |0.97 |
+|E    |0.11 |     |     |0.65 |     |
 
 
 ## Graph pruning
