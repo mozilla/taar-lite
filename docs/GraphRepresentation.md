@@ -252,10 +252,10 @@ down each column of the matrix:
 
 ```python
 non_zero_counts = {
-    'A': 100, # A is co-installed with 100 add-ons
-    'B': 3,   # B is co-installed with 3 add-ons
-    'C': 2,   # C is co-installed with 2 add-ons
-    'D': 2,   # D is co-installed with 2 add-ons
+    'A': 100, # A is coinstalled with 100 add-ons
+    'B': 3,   # B is coinstalled with 3 add-ons
+    'C': 2,   # C is coinstalled with 2 add-ons
+    'D': 2,   # D is coinstalled with 2 add-ons
     ...
 }
 ```
@@ -332,6 +332,71 @@ the proportion of aggregate relevance derived from add-on A.
 
 
 This treatment is implemented as [`RowSum`](../taar_lite/recommenders/treatments.py#L64).
+
+
+#### Example
+
+In this example, we have a universe of only 5 add-ons,
+with the following coinstallation data:
+
+```python
+coinstalls = {
+    'A': {'B': 1000, 'C': 100, 'D': 10, 'E': 1},
+    'B': {'A': 1000, 'C': 50, 'D': 50},
+    'C': {'A': 100, 'B': 50, 'D': 100},
+    'D': {'A': 10, 'B': 50, 'C': 100, 'E': 5},
+    'E': {'A': 1, 'D': 5}
+}
+```
+
+The associated adjacency matrix is:
+
+|     |A    |B    |C    |D    |E    |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|A    |     |1000 |100  |10   |1    |
+|B    |1000 |     |50   |50   |     |
+|C    |100  |50   |     |100  |     |
+|D    |10   |50   |100  |     |5    |
+|E    |1    |     |     |5    |     |
+
+To apply the normalization, we sum the values
+down each column of the matrix:
+
+```python
+column_sums = {
+    'A': 1111, # A is coinstalled 1111 times
+    'B': 1100, # B is coinstalled 1100 times
+    'C': 250,  # C is coinstalled 250 times
+    'D': 165,  # D is coinstalled 165 times
+    'E': 6     # E is coinstalled 6 times
+}
+```
+
+and divide each column of the matrix by the corresponding sum:
+
+|     |A    |B    |C    |D    |E    |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|A    |     |0.91 |0.4  |0.061|0.167|
+|B    |0.9  |     |0.2  |0.3  |     |
+|C    |0.09 |0.045|     |0.61 |     |
+|D    |0.009|0.045|0.4  |     |0.83 |
+|E    |0.001|     |     |0.03 |...  |
+
+Observe:
+
+- B is still the most relevant add-on to A (along row A),
+    since in a coinstall with B, the other add-on is most likely to be A.
+    For the same reason, A is still the most relevant add-on to B (along row B).
+- E is now the second-last most relevant add-on to A, rather than D.
+- The relevances of C and D to B (along row B) are no longer equal.
+- Similarly, D is now the most relevant add-on to C,
+    and A is now in last place along row C.
+- The relevance of E to D has been upweighted significantly,
+    since out of the few coinstalls that include E,
+    the other add-on is most likely to be D.
+- The matrix is no longer symmetric, eg. the relevance of B to A (entry (A,B))
+  is no longer the same as the relevance of A to B (entry (B,A)).
+- Columns sum to 1, but row sums are not meaningful.
 
 
 ### Proportional total normalization
