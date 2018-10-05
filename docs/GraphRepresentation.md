@@ -434,78 +434,110 @@ relevance budget to 1.
 The next step then normalizes each coinstalled add-on's
 resulting aggregate relevance to 1.
 
+Another way to think about the initial row-wise normalization is that
+it corrects for differences in scale of the relevance scores between add-ons.
+In the case of coinstallation counts, suppose there is an add-on A
+which is much more commonly installed than any of the others.
+A's row in the matrix will then tend to have much larger values
+than the other rows.
+The column sums of the total relevance normalization
+are each dominated by the value in row A,
+artificially shrinking the scores in the other rows.
+If the row-wise normalization is applied first,
+each row's relevance scores are rescaled to the interval $[0,1]$.
+
 This treatment is implemented as [`RowNormSum`](../taar_lite/recommenders/treatments.py#L126).
 
 
 #### Example
 
-Consider the same coinstallation data over 5 add-ons as above:
+Consider a coinstallation dataset consisting of 4 add-ons:
 
 ```python
 coinstalls = {
-    'A': {'B': 1000, 'C': 100, 'D': 10, 'E': 1},
-    'B': {'A': 1000, 'C': 50, 'D': 50},
-    'C': {'A': 100, 'B': 50, 'D': 100},
-    'D': {'A': 10, 'B': 50, 'C': 100, 'E': 5},
-    'E': {'A': 1, 'D': 5}
+    'A': {'B': 50, 'C': 50, 'D': 50},
+    'B': {'A': 50, 'C': 10, 'D': 1},
+    'C': {'A': 50, 'B': 10},
+    'D': {'A': 50, 'B': 1}
 }
 ```
 
 The associated adjacency matrix is:
 
-|     |A    |B    |C    |D    |E    |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-|A    |     |1000 |100  |10   |1    |
-|B    |1000 |     |50   |50   |     |
-|C    |100  |50   |     |100  |     |
-|D    |10   |50   |100  |     |5    |
-|E    |1    |     |     |5    |     |
+|     |A    |B    |C    |D    |
+|:---:|:---:|:---:|:---:|:---:|
+|A    |     |50   |50   |50   |
+|B    |50   |     |10   |1    |
+|C    |50   |10   |     |     |
+|D    |50   |1    |     |     |
 
 To apply the normalization, the first step is to sum the values
 along each row of the matrix:
 
 ```python
 row_sums = {
-    'A': 1111, # A has 1111 coinstallations
-    'B': 1100, # B has 1100 coinstallations
-    'C': 250,  # C has 250 coinstallations
-    'D': 165,  # D has 165 coinstallations
-    'E': 6     # E has 6 coinstallations
+    'A': 150, # A has 150 coinstallations
+    'B': 61,  # B has 61 coinstallations
+    'C': 60,  # C has 60 coinstallations
+    'D': 51   # D has 51 coinstallations
 }
 ```
 
 and divide each row of the matrix by the corresponding sum:
 
-|     |A    |B    |C    |D    |E    |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-|A    |     |0.9  |0.09 |0.009|0.001|
-|B    |0.91 |     |0.045|0.045|     |
-|C    |0.4  |0.2  |     |0.4  |     |
-|D    |0.061|0.3  |0.61 |     |0.03 |
-|E    |0.167|     |     |0.83 |     |
+|     |A    |B    |C    |D    |
+|:---:|:---:|:---:|:---:|:---:|
+|A    |     |0.33 |0.33 |0.33 |
+|B    |0.82 |     |0.16 |0.016|
+|C    |0.83 |0.17 |     |     |
+|D    |0.98 |0.02 |     |     |
 
 We then apply the total relevance normalization to this matrix,
 summing the values down each column:
 
 ```python
-{
-    'A': 1.538,
-    'B': 1.4,
-    'C': 0.745,
-    'D': 1.284,
-    'E': 0.031
+column_sums = {
+    'A': 2.63,
+    'B': 0.52,
+    'C': 0.49,
+    'D': 0.346
 }
 ```
 
 and dividing each column by its corresponding sum:
 
-|     |A    |B    |C    |D    |E    |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-|A    |     |0.64 |0.12 |0.007|0.032|
-|B    |0.59 |     |0.06 |0.035|     |
-|C    |0.26 |0.14 |     |0.31 |     |
-|D    |0.04 |0.21 |0.82 |     |0.97 |
-|E    |0.11 |     |     |0.65 |     |
+|     |A    |B    |C    |D    |
+|:---:|:---:|:---:|:---:|:---:|
+|A    |     |0.63 |0.67 |0.95 |
+|B    |0.31 |     |0.33 |0.046|
+|C    |0.32 |0.33 |     |     |
+|D    |0.37 |0.038|     |     |
+
+Observe:
+
+- The relevance of B and C to each other have been boosted enough
+    to overtake A as the most relevant recommendation
+    (entries (B,C) and (C,B)).
+- The relevances of other add-ons to A (along row A)
+    are no longer all equal, and the relevance of D to A has been upweighted
+    enough to make it the top recommendation.
+- As above, the matrix is no longer symmetric.
+- Columns sum to 1, but row sums are not meaningful.
+
+Compare this to the result of applying the total relevance normalization
+directly:
+
+|     |A    |B    |C    |D    |
+|:---:|:---:|:---:|:---:|:---:|
+|A    |     |0.82 |0.83 |0.98 |
+|B    |0.33 |     |0.17 |0.02 |
+|C    |0.33 |0.16 |     |     |
+|D    |0.33 |0.016|     |     |
+
+- A is now surfaced as the most relevant recommendation for every other add-on.
+    This is because the large values in row A of the coinstallation matrix
+    have overshadowed those for other combinations of add-ons
+    when computing the normalization.
 
 
 ## Graph pruning
