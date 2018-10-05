@@ -560,9 +560,10 @@ This can be accomplished by adding or removing edges between certain vertices.
 The currently implemented graph pruning treatments are [minimum relevance](#minimum-relevance-pruning)
 and [recommendation selection](#recommendation-selection).
 
+
 ### Minimum relevance pruning
 
-This treatment removes add-on vertices whose relevance score is lower
+This treatment removes add-on vertices whose relevance scores are lower
 than a given threshold,
 under the assumption that
 __candidates with such low relevance would not make good recommendations,
@@ -581,6 +582,81 @@ Equivalently, the corresponding row and column are removed from the matrix $C$.
 This treatment is implemented as [`MinInstallPrune`](../taar_lite/recommenders/treatments.py#L36).
 The auxiliary score list is supplied as the keyword arg `ranking_dict`,
 a dict mapping add-on GUIDs to overall relevance scores.
+
+
+#### Example
+
+Consider coinstallations over a universe of 5 add-ons:
+
+```python
+coinstalls = {
+    'A': {'B': 1000, 'C': 100, 'D': 10, 'E': 1},
+    'B': {'A': 1000, 'C': 50, 'D': 50},
+    'C': {'A': 100, 'B': 50, 'D': 100},
+    'D': {'A': 10, 'B': 50, 'C': 100, 'E': 5},
+    'E': {'A': 1, 'D': 5}
+}
+```
+
+The associated adjacency matrix is:
+
+|     |A    |B    |C    |D    |E    |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|A    |     |1000 |100  |10   |1    |
+|B    |1000 |     |50   |50   |     |
+|C    |100  |50   |     |100  |     |
+|D    |10   |50   |100  |     |5    |
+|E    |1    |     |     |5    |     |
+
+and the add-on relational graph has the following form:
+
+```
+    A----B
+  _/|\  /|
+ /  | \/ |
+E   | /\ |
+ \_ |/  \|
+   \D----C
+```
+
+(all edges are undirected, since the coinstallation matrix is symmetric).
+
+Additionally, suppose we have the following auxiliary scores for these add-ons:
+
+```python
+ranking_dict = {
+    'A': 1500,
+    'B': 1200,
+    'C': 250,
+    'D': 170,
+    'E': 10
+}
+```
+
+The mean of these scores is 626, and we compute the relevance threshold
+as 5% of the mean, which is 31.3.
+The auxiliary score for add-on E falls below the threshold,
+and so we drop its vertex from the graph.
+
+The new adjacency matrix is:
+
+|     |A    |B    |C    |D    |
+|:---:|:---:|:---:|:---:|:---:|
+|A    |     |1000 |100  |10   |
+|B    |1000 |     |50   |50   |
+|C    |100  |50   |     |100  |
+|D    |10   |50   |100  |     |
+
+and the updated graph is:
+
+```
+    A----B
+    |\  /|
+    | \/ |
+    | /\ |
+    |/  \|
+    D----C
+```
 
 
 ### Recommendation selection
