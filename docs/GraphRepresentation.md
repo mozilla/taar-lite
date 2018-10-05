@@ -619,7 +619,7 @@ E   | /\ |
    \D----C
 ```
 
-(all edges are undirected, since the coinstallation matrix is symmetric).
+where all edges are undirected, since the coinstallation matrix is symmetric.
 
 Additionally, suppose we have the following auxiliary scores for these add-ons:
 
@@ -658,6 +658,9 @@ and the updated graph is:
     D----C
 ```
 
+Note that this does not affect the direction or weights
+on any of the remaining edges.
+
 
 ### Recommendation selection
 
@@ -675,4 +678,118 @@ in which the recommendations for a given add-on A
 can be read off as A's neighbours.
 As these final recommendations are considered unordered,
 we ignore the final edge weights, and can optionally set them to all to 1.
+
+
+#### Example
+
+Suppose we have a collection of 5 add-ons with the following relevance scores:
+
+```python
+coinstalls = {
+    'A': {'B': 0.91, 'C': 0.4, 'D': 0.061, 'E': 0.167},
+    'B': {'A': 0.9, 'C': 0.25, 'D': 0.25},
+    'C': {'A': 0.09, 'B': 0.045, 'D': 0.61},
+    'D': {'A': 0.009, 'B': 0.045, 'C': 0.4, 'E': 0.83},
+    'E': {'A': 0.001, 'D': 0.03}
+}
+```
+
+The associated adjacency matrix is:
+
+|     |A    |B    |C    |D    |E    |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|A    |     |0.91 |0.4  |0.061|0.167|
+|B    |0.9  |     |0.25 |0.25 |     |
+|C    |0.09 |0.045|     |0.61 |     |
+|D    |0.009|0.045|0.4  |     |0.83 |
+|E    |0.001|     |     |0.03 |     |
+
+and the corresponding graph has the form:
+
+```
+    A+----+B
+   +++    ++
+  / | \  / |
+ +  |  \/  |
+E   |  /\  |
+ +  | /  \ |
+  \ ++    ++
+   +D+----+C
+```
+
+where `+` denotes arrowheads indicating the direction of the edges.
+In fact, this graph is effectively undirected,
+since each edge runs in both directions.
+
+We are also given the following auxiliary scores to be used for tie-breaking:
+
+```python
+tie_breaker_dict = {
+    'A': 1500,
+    'B': 1200,
+    'C': 150,
+    'D': 170,
+    'E': 10
+}
+```
+
+We wish to select 2 recommendations for each add-on.
+To do this, we order each add-on's candidate list
+(row in the adjacency matrix)
+by decreasing relevance:
+
+```python
+ordered_candidates = {
+    #'A': {'B': 0.91, 'C': 0.4, 'D': 0.061, 'E': 0.167}
+    'A': ['B', 'C', 'E', 'D'],
+    #'B': {'A': 0.9, 'C': 0.25, 'D': 0.25}
+    # tie_breaker_dict['C'] is 150, tie_breaker_dict['D'] is 170
+    'B': ['A', 'D', 'C'],
+    #'C': {'A': 0.09, 'B': 0.045, 'D': 0.61}
+    'C': ['D', 'A', 'B'],
+    #'D': {'A': 0.009, 'B': 0.045, 'C': 0.4, 'E': 0.83}
+    'D': ['E', 'C', 'B', 'A'],
+    #'E': {'A': 0.001, 'D': 0.03}
+    'E': ['D', 'A']
+}
+```
+
+Note that, when ordering the candidates for B, we used the auxiliary scores
+to break the tie between C and D.
+To generate the final recommendations, we select the first 2 items
+from each list:
+
+```python
+recommendations = {
+    'A': ['B', 'C'],
+    'B': ['A', 'D'],
+    'C': ['D', 'A'],
+    'D': ['E', 'C'],
+    'E': ['D', 'A']
+}
+```
+
+We interpret the result as an unweighted add-on relational graph
+with adjacency matrix:
+
+|     |A    |B    |C    |D    |E    |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+|A    |     |1    |1    |     |     |
+|B    |1    |     |     |1    |     |
+|C    |1    |     |     |1    |     |
+|D    |     |     |1    |     |1    |
+|E    |1    |     |     |1    |     |
+
+and corresponding graph:
+
+```
+    A+----+B
+   + +    / 
+  /   \  /  
+ /     \/   
+E      /\   
+ +    /  \  
+  \  +    + 
+   +D+----+C
+```
 
