@@ -793,3 +793,8 @@ E      /\
    +D+----+C
 ```
 
+----
+
+__Note:__ R code to generate the matrices and apply the treatments
+used in the examples is available in [this gist](https://gist.github.com/dzeber/fbf558c9cdbf3f5573d74e6b75f6bdc5).
+
