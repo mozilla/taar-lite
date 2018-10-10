@@ -399,7 +399,7 @@ Observe:
 - Columns sum to 1, but row sums are not meaningful.
 
 
-### Proportional total normalization
+### Proportional total relevance normalization
 
 This treatment is a rescaled version of the [total relevance normalization](#total-relevance-normalization).
 Rather than total coinstalls, popularity is quantified in terms of
@@ -446,7 +446,7 @@ artificially shrinking the scores in the other rows.
 If the row-wise normalization is applied first,
 each row's relevance scores are rescaled to the interval $[0,1]$.
 
-This treatment is implemented as [`RowNormSum`](../taar_lite/recommenders/treatments.py#L126).
+This treatment is implemented as [`ProportionalTotalRelevanceNormt`](../taar_lite/recommenders/treatments.py#L126).
 
 
 #### Example

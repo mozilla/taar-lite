@@ -123,13 +123,12 @@ class RowNormalizationMixin():
         return tmp_dict
 
 
-class RowNormSum(BaseTreatment, RowNormalizationMixin):
-    """This normalization is the same as norm_row_sum, but we also
-    divide the result by the sum of
+class ProportionalTotalRelevanceNorm(BaseTreatment, RowNormalizationMixin):
+    """This normalization is a rescaling of TotalRelevanceNorm.
+    It divides the result by the sum of
     (addon coinstall instances)/(addon coinstall total instances)
 
-    The testcase for this scenario lays out the math more
-    explicitly.
+    The testcase for this scenario lays out the math more explicitly.
     """
 
     def _build_guid_row_norm(self, input_dict):
