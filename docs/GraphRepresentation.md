@@ -187,7 +187,7 @@ The currently implemented normalization treatments are [add-on count](#add-on-co
 and [proportional total](#proportional-total-normalization).
 
 
-### Add-on count normalization
+### Degree normalization
 
 This treatment accounts for the popularity of an add-on in terms of
 how widely it is coinstalled,
@@ -216,7 +216,7 @@ This normalization is most effective when comparing add-ons B
 with similar total installation counts,
 of which some may be coinstalled more widely than others.
 
-This treatment is implemented as [`RowCount`](../taar_lite/recommenders/treatments.py#L87).
+This treatment is implemented as [`DegreeNorm`](../taar_lite/recommenders/treatments.py#L87).
 
 
 #### Example

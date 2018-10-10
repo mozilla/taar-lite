@@ -84,7 +84,7 @@ class RowSum(BaseTreatment):
         return treatment_dict
 
 
-class RowCount(BaseTreatment):
+class DegreeNorm(BaseTreatment):
     """This normalization method counts the unique times that a
     GUID is coinstalled with any other GUID.
 
