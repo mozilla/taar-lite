@@ -34,7 +34,7 @@ NORM_MODE_TOTAL_REL = 'tr'
 class LoggingMinInstallPrune(MinInstallPrune):
 
     def treat(self, input_dict, **kwargs):
-        output_dict = super().treat(input_dict, **kwargs)
+        output_dict = super(LoggingMinInstallPrune, self).treat(input_dict, **kwargs)
         if self.min_installs < 100:
             logger = kwargs['logger']
             logger.warn("minimum installs threshold low: [%s]" % self.min_installs)

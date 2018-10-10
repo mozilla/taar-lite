@@ -9,7 +9,7 @@ import numpy as np
 from .utils import normalize_row_weights
 
 
-class BaseTreatment:
+class BaseTreatment(object):
 
     def treat(self, input_dict, **kwargs):
         """Accept a coinstallation graph, and returns a treated graph.
