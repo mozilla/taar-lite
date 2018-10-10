@@ -6,9 +6,10 @@ so the coupling is clear. I think the structure roughly makes sense, but the
 implementation could be tidier / less error prone.
 """
 import numpy as np
+from .utils import normalize_row_weights
 
 
-class BaseTreatment:
+class BaseTreatment(object):
 
     def treat(self, input_dict, **kwargs):
         """Accept a coinstallation graph, and returns a treated graph.
@@ -61,30 +62,7 @@ class MinInstallPrune(BaseTreatment):
         return cleaned_dict
 
 
-class RowSum(BaseTreatment):
-    """This normalization normalizes the weights for the suggested
-    coinstallation GUIDs based on the sum of the weights for the
-    coinstallation GUIDs.
-    """
-    def treat(self, input_dict, **kwargs):
-        guid_count_map = {}
-        for guidkey, coinstalls in input_dict.items():
-            for coinstall_guid, coinstall_count in coinstalls.items():
-                guid_count_map.setdefault(coinstall_guid, 0)
-                guid_count_map[coinstall_guid] += coinstall_count
-
-        treatment_dict = {}
-        for guidkey, coinstalls in input_dict.items():
-            output_dict = {}
-            for guid, guid_weight in coinstalls.items():
-                norm_guid_weight = guid_weight * 1.0 / guid_count_map[guid]
-                output_dict[guid] = norm_guid_weight
-            treatment_dict[guidkey] = output_dict
-
-        return treatment_dict
-
-
-class RowCount(BaseTreatment):
+class DegreeNorm(BaseTreatment):
     """This normalization method counts the unique times that a
     GUID is coinstalled with any other GUID.
 
@@ -109,27 +87,35 @@ class RowCount(BaseTreatment):
         return treatment_dict
 
 
-class RowNormalizationMixin():
+class TotalRelevanceNorm(BaseTreatment):
+    """This normalization normalizes the weights for the suggested
+    coinstallation GUIDs based on the sum of the weights for the
+    coinstallation GUIDs.
+    """
+    def treat(self, input_dict, **kwargs):
+        guid_count_map = {}
+        for guidkey, coinstalls in input_dict.items():
+            for coinstall_guid, coinstall_count in coinstalls.items():
+                guid_count_map.setdefault(coinstall_guid, 0)
+                guid_count_map[coinstall_guid] += coinstall_count
 
-    def _normalize_row_weights(self, coinstall_dict):
-        # Compute an intermediary dictionary that is a row normalized
-        # co-install. That is - each coinstalled guid weight is
-        # divided by the sum of the weights for all coinstalled guids
-        # on this row.
-        tmp_dict = {}
-        coinstall_total_weight = sum(coinstall_dict.values())
-        for coinstall_guid, coinstall_weight in coinstall_dict.items():
-            tmp_dict[coinstall_guid] = coinstall_weight / coinstall_total_weight
-        return tmp_dict
+        treatment_dict = {}
+        for guidkey, coinstalls in input_dict.items():
+            output_dict = {}
+            for guid, guid_weight in coinstalls.items():
+                norm_guid_weight = guid_weight * 1.0 / guid_count_map[guid]
+                output_dict[guid] = norm_guid_weight
+            treatment_dict[guidkey] = output_dict
+
+        return treatment_dict
 
 
-class RowNormSum(BaseTreatment, RowNormalizationMixin):
-    """This normalization is the same as norm_row_sum, but we also
-    divide the result by the sum of
+class ProportionalTotalRelevanceNorm(BaseTreatment):
+    """This normalization is a rescaling of TotalRelevanceNorm.
+    It divides the result by the sum of
     (addon coinstall instances)/(addon coinstall total instances)
 
-    The testcase for this scenario lays out the math more
-    explicitly.
+    The testcase for this scenario lays out the math more explicitly.
     """
 
     def _build_guid_row_norm(self, input_dict):
@@ -147,7 +133,7 @@ class RowNormSum(BaseTreatment, RowNormalizationMixin):
         treatment_dict = {}
         for guidkey, coinstalls in input_dict.items():
             output_dict = {}
-            tmp_dict = self._normalize_row_weights(coinstalls)
+            tmp_dict = normalize_row_weights(coinstalls)
             for output_guid, output_guid_weight in tmp_dict.items():
                 guid_row_norm_list = guid_row_norm.get(output_guid, [])
                 norm_sum = sum(guid_row_norm_list)

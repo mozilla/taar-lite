@@ -1,8 +1,9 @@
 """Untested treatments, not yet ready for production."""
-from .treatments import BaseTreatment, RowNormalizationMixin
+from .treatments import BaseTreatment
+from .utils import normalize_row_weights
 
 
-class Guidception(BaseTreatment, RowNormalizationMixin):
+class Guidception(BaseTreatment):
     """ Expected guid-2 results based on mock_data
 
     guid2 = {
@@ -23,7 +24,7 @@ class Guidception(BaseTreatment, RowNormalizationMixin):
         self._coinstallations = input_dict
         treatment_dict = {}
         for guidkey, coinstalls in input_dict.items():
-            tmp_dict = self._normalize_row_weights(coinstalls)
+            tmp_dict = normalize_row_weights(coinstalls)
             output_dict = self._compute_recursive_results(tmp_dict, self.RECURSION_LEVELS)
             treatment_dict[guidkey] = output_dict
         return treatment_dict
@@ -55,7 +56,7 @@ class Guidception(BaseTreatment, RowNormalizationMixin):
             next_level_coinstalls = self._coinstallations.get(guid, {})
             if next_level_coinstalls != {}:
                 # Normalize the next bunch of suggestions
-                next_level_coinstalls = self._normalize_row_weights(next_level_coinstalls)
+                next_level_coinstalls = normalize_row_weights(next_level_coinstalls)
 
                 next_level_results = self._compute_recursive_results(next_level_coinstalls, level)
                 for _, next_level_weight in next_level_results.items():
@@ -64,4 +65,4 @@ class Guidception(BaseTreatment, RowNormalizationMixin):
                     consolidated_coinstall_dict[guid] = weight
 
         # normalize the final results
-        return self._normalize_row_weights(consolidated_coinstall_dict)
+        return normalize_row_weights(consolidated_coinstall_dict)

@@ -1,9 +1,9 @@
 import pytest
 from taar_lite.recommenders.treatments import (
     NoTreatment,
-    RowCount,
-    RowNormSum,
-    RowSum,
+    DegreeNorm,
+    ProportionalTotalRelevanceNorm,
+    TotalRelevanceNorm,
 )
 
 
@@ -53,7 +53,7 @@ def test_row_count_treatment(mock_data):
         'guid-4': 20 / 3,  # 1/3 of 20
         'guid-9': 5.0,  # 50% of 10
     }
-    treatment = RowCount()
+    treatment = DegreeNorm()
     treated_data = treatment.treat(mock_data)
     actual_guid_2 = treated_data['guid-2']
     assert expected_guid_2 == actual_guid_2
@@ -86,7 +86,7 @@ def test_row_norm_sum_treatment(mock_data):
         'guid-8': 0.3788819875776398,
         'guid-9': 0.1689750692520776,
     }
-    treatment = RowNormSum()
+    treatment = ProportionalTotalRelevanceNorm()
     treated_data = treatment.treat(mock_data)
     actual_guid_2 = treated_data['guid-2']
     assert expected_guid_2 == actual_guid_2
@@ -104,7 +104,7 @@ def test_row_sum_treatment(mock_data):
         'guid-8': 30 / (30 + 100),
         'guid-9': 10 / (10 + 100),
     }
-    treatment = RowSum()
+    treatment = TotalRelevanceNorm()
     treated_data = treatment.treat(mock_data)
     actual_guid_2 = treated_data['guid-2']
     assert expected_guid_2 == actual_guid_2

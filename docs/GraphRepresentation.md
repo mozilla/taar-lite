@@ -187,7 +187,7 @@ The currently implemented normalization treatments are [add-on count](#add-on-co
 and [proportional total](#proportional-total-normalization).
 
 
-### Add-on count normalization
+### Degree normalization
 
 This treatment accounts for the popularity of an add-on in terms of
 how widely it is coinstalled,
@@ -216,7 +216,7 @@ This normalization is most effective when comparing add-ons B
 with similar total installation counts,
 of which some may be coinstalled more widely than others.
 
-This treatment is implemented as [`RowCount`](../taar_lite/recommenders/treatments.py#L87).
+This treatment is implemented as [`DegreeNorm`](../taar_lite/recommenders/treatments.py#L87).
 
 
 #### Example
@@ -331,7 +331,7 @@ The normalization converts raw relevance scores to
 the proportion of aggregate relevance derived from add-on A.
 
 
-This treatment is implemented as [`RowSum`](../taar_lite/recommenders/treatments.py#L64).
+This treatment is implemented as [`TotalRelevanceNorm`](../taar_lite/recommenders/treatments.py#L64).
 
 
 #### Example
@@ -399,7 +399,7 @@ Observe:
 - Columns sum to 1, but row sums are not meaningful.
 
 
-### Proportional total normalization
+### Proportional total relevance normalization
 
 This treatment is a rescaled version of the [total relevance normalization](#total-relevance-normalization).
 Rather than total coinstalls, popularity is quantified in terms of
@@ -446,7 +446,7 @@ artificially shrinking the scores in the other rows.
 If the row-wise normalization is applied first,
 each row's relevance scores are rescaled to the interval $[0,1]$.
 
-This treatment is implemented as [`RowNormSum`](../taar_lite/recommenders/treatments.py#L126).
+This treatment is implemented as [`ProportionalTotalRelevanceNormt`](../taar_lite/recommenders/treatments.py#L126).
 
 
 #### Example
