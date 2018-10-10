@@ -6,6 +6,7 @@ so the coupling is clear. I think the structure roughly makes sense, but the
 implementation could be tidier / less error prone.
 """
 import numpy as np
+from .utils import normalize_row_weights
 
 
 class BaseTreatment:
@@ -109,21 +110,7 @@ class TotalRelevanceNorm(BaseTreatment):
         return treatment_dict
 
 
-class RowNormalizationMixin():
-
-    def _normalize_row_weights(self, coinstall_dict):
-        # Compute an intermediary dictionary that is a row normalized
-        # co-install. That is - each coinstalled guid weight is
-        # divided by the sum of the weights for all coinstalled guids
-        # on this row.
-        tmp_dict = {}
-        coinstall_total_weight = sum(coinstall_dict.values())
-        for coinstall_guid, coinstall_weight in coinstall_dict.items():
-            tmp_dict[coinstall_guid] = coinstall_weight / coinstall_total_weight
-        return tmp_dict
-
-
-class ProportionalTotalRelevanceNorm(BaseTreatment, RowNormalizationMixin):
+class ProportionalTotalRelevanceNorm(BaseTreatment):
     """This normalization is a rescaling of TotalRelevanceNorm.
     It divides the result by the sum of
     (addon coinstall instances)/(addon coinstall total instances)
@@ -146,7 +133,7 @@ class ProportionalTotalRelevanceNorm(BaseTreatment, RowNormalizationMixin):
         treatment_dict = {}
         for guidkey, coinstalls in input_dict.items():
             output_dict = {}
-            tmp_dict = self._normalize_row_weights(coinstalls)
+            tmp_dict = normalize_row_weights(coinstalls)
             for output_guid, output_guid_weight in tmp_dict.items():
                 guid_row_norm_list = guid_row_norm.get(output_guid, [])
                 norm_sum = sum(guid_row_norm_list)
