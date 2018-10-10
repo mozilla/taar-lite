@@ -61,29 +61,6 @@ class MinInstallPrune(BaseTreatment):
         return cleaned_dict
 
 
-class RowSum(BaseTreatment):
-    """This normalization normalizes the weights for the suggested
-    coinstallation GUIDs based on the sum of the weights for the
-    coinstallation GUIDs.
-    """
-    def treat(self, input_dict, **kwargs):
-        guid_count_map = {}
-        for guidkey, coinstalls in input_dict.items():
-            for coinstall_guid, coinstall_count in coinstalls.items():
-                guid_count_map.setdefault(coinstall_guid, 0)
-                guid_count_map[coinstall_guid] += coinstall_count
-
-        treatment_dict = {}
-        for guidkey, coinstalls in input_dict.items():
-            output_dict = {}
-            for guid, guid_weight in coinstalls.items():
-                norm_guid_weight = guid_weight * 1.0 / guid_count_map[guid]
-                output_dict[guid] = norm_guid_weight
-            treatment_dict[guidkey] = output_dict
-
-        return treatment_dict
-
-
 class DegreeNorm(BaseTreatment):
     """This normalization method counts the unique times that a
     GUID is coinstalled with any other GUID.
@@ -104,6 +81,29 @@ class DegreeNorm(BaseTreatment):
             output_dict = {}
             for result_guid, result_count in coinstalls.items():
                 output_dict[result_guid] = 1.0 * result_count / row_count[result_guid]
+            treatment_dict[guidkey] = output_dict
+
+        return treatment_dict
+
+
+class TotalRelevanceNorm(BaseTreatment):
+    """This normalization normalizes the weights for the suggested
+    coinstallation GUIDs based on the sum of the weights for the
+    coinstallation GUIDs.
+    """
+    def treat(self, input_dict, **kwargs):
+        guid_count_map = {}
+        for guidkey, coinstalls in input_dict.items():
+            for coinstall_guid, coinstall_count in coinstalls.items():
+                guid_count_map.setdefault(coinstall_guid, 0)
+                guid_count_map[coinstall_guid] += coinstall_count
+
+        treatment_dict = {}
+        for guidkey, coinstalls in input_dict.items():
+            output_dict = {}
+            for guid, guid_weight in coinstalls.items():
+                norm_guid_weight = guid_weight * 1.0 / guid_count_map[guid]
+                output_dict[guid] = norm_guid_weight
             treatment_dict[guidkey] = output_dict
 
         return treatment_dict

@@ -331,7 +331,7 @@ The normalization converts raw relevance scores to
 the proportion of aggregate relevance derived from add-on A.
 
 
-This treatment is implemented as [`RowSum`](../taar_lite/recommenders/treatments.py#L64).
+This treatment is implemented as [`TotalRelevanceNorm`](../taar_lite/recommenders/treatments.py#L64).
 
 
 #### Example
