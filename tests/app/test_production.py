@@ -3,15 +3,15 @@ from mock import patch, MagicMock
 from taar_lite.app.production import (
     TaarLiteAppResource,
     LoggingMinInstallPrune,
-    NORM_MODE_ROWCOUNT,
-    NORM_MODE_ROWNORMSUM,
-    NORM_MODE_ROWSUM
+    NORM_MODE_PROPORTIONAL_TOTAL_REL,
+    NORM_MODE_DEGREE,
+    NORM_MODE_TOTAL_REL,
 )
 from taar_lite.recommenders.treatments import (
     NoTreatment,
-    RowCount,
-    RowNormSum,
-    RowSum,
+    DegreeNorm,
+    ProportionalTotalRelevanceNorm,
+    TotalRelevanceNorm,
 )
 
 
@@ -26,9 +26,9 @@ def test_calling_with_normalize_string_matches(test_context):
         mock_recommender.recommend.assert_called_once_with('a', 4)
 
     assert_recommender_match('none')
-    assert_recommender_match(NORM_MODE_ROWCOUNT)
-    assert_recommender_match(NORM_MODE_ROWNORMSUM)
-    assert_recommender_match(NORM_MODE_ROWSUM)
+    assert_recommender_match(NORM_MODE_DEGREE)
+    assert_recommender_match(NORM_MODE_PROPORTIONAL_TOTAL_REL)
+    assert_recommender_match(NORM_MODE_TOTAL_REL)
 
 
 def test_calling_with_normalize_as_random_value_returns_empty_list(test_context):
@@ -43,20 +43,20 @@ def test_recommenders_use_their_respective_treatments(test_context):
     assert len(recommenders['none'].treatments) == 2
     assert isinstance(recommenders['none'].treatments[0], LoggingMinInstallPrune)
     assert isinstance(recommenders['none'].treatments[1], NoTreatment)
-    assert len(recommenders[NORM_MODE_ROWCOUNT].treatments) == 2
-    assert isinstance(recommenders[NORM_MODE_ROWCOUNT].treatments[0], LoggingMinInstallPrune)
-    assert isinstance(recommenders[NORM_MODE_ROWCOUNT].treatments[1], RowCount)
-    assert len(recommenders[NORM_MODE_ROWNORMSUM].treatments) == 2
-    assert isinstance(recommenders[NORM_MODE_ROWNORMSUM].treatments[0], LoggingMinInstallPrune)
-    assert isinstance(recommenders[NORM_MODE_ROWNORMSUM].treatments[1], RowNormSum)
-    assert len(recommenders[NORM_MODE_ROWSUM].treatments) == 2
-    assert isinstance(recommenders[NORM_MODE_ROWSUM].treatments[0], LoggingMinInstallPrune)
-    assert isinstance(recommenders[NORM_MODE_ROWSUM].treatments[1], RowSum)
+    assert len(recommenders[NORM_MODE_DEGREE].treatments) == 2
+    assert isinstance(recommenders[NORM_MODE_DEGREE].treatments[0], LoggingMinInstallPrune)
+    assert isinstance(recommenders[NORM_MODE_DEGREE].treatments[1], DegreeNorm)
+    assert len(recommenders[NORM_MODE_PROPORTIONAL_TOTAL_REL].treatments) == 2
+    assert isinstance(recommenders[NORM_MODE_PROPORTIONAL_TOTAL_REL].treatments[0], LoggingMinInstallPrune)
+    assert isinstance(recommenders[NORM_MODE_PROPORTIONAL_TOTAL_REL].treatments[1], ProportionalTotalRelevanceNorm)
+    assert len(recommenders[NORM_MODE_TOTAL_REL].treatments) == 2
+    assert isinstance(recommenders[NORM_MODE_TOTAL_REL].treatments[0], LoggingMinInstallPrune)
+    assert isinstance(recommenders[NORM_MODE_TOTAL_REL].treatments[1], TotalRelevanceNorm)
 
 
 def test_recommenders_have_tie_breaker_dict_set(test_context):
     app_resource = TaarLiteAppResource(test_context)
     recommenders = app_resource._recommenders  # noqa
     tie_breaker_dict = app_resource._guid_rankings  # noqa
-    for norm in ['none', NORM_MODE_ROWCOUNT, NORM_MODE_ROWNORMSUM, NORM_MODE_ROWSUM]:
+    for norm in ['none', NORM_MODE_DEGREE, NORM_MODE_PROPORTIONAL_TOTAL_REL, NORM_MODE_TOTAL_REL]:
         assert recommenders[norm].tie_breaker_dict == tie_breaker_dict

@@ -12,11 +12,11 @@ from srgutil.cache import LazyJSONLoader
 
 from ..recommenders.guidguid import GuidGuidCoinstallRecommender
 from ..recommenders.treatments import (
+    DegreeNorm,
     NoTreatment,
     MinInstallPrune,
-    RowCount,
-    RowNormSum,
-    RowSum
+    ProportionalTotalRelevanceNorm,
+    TotalRelevanceNorm,
 )
 
 ADDON_LIST_BUCKET = 'telemetry-parquet'
@@ -26,9 +26,9 @@ GUID_RANKING_KEY = 'taar/lite/guid_install_ranking.json'
 ADDON_DL_ERR = "Cannot download addon coinstallation file {}".format(ADDON_LIST_KEY)   # noqa
 TAAR_CACHE_EXPIRY = config('TAAR_CACHE_EXPIRY', default=14400, cast=int)
 
-NORM_MODE_ROWNORMSUM = 'rownorm_sum'
-NORM_MODE_ROWCOUNT = 'row_count'
-NORM_MODE_ROWSUM = 'row_sum'
+NORM_MODE_PROPORTIONAL_TOTAL_REL = 'ptr'
+NORM_MODE_DEGREE = 'd'
+NORM_MODE_TOTAL_REL = 'tr'
 
 
 class LoggingMinInstallPrune(MinInstallPrune):
@@ -127,9 +127,9 @@ class TaarLiteAppResource:
             )
         self._recommenders = {
             'none': get_recommender(NoTreatment()),
-            NORM_MODE_ROWCOUNT: get_recommender(RowCount()),
-            NORM_MODE_ROWSUM: get_recommender(RowSum()),
-            NORM_MODE_ROWNORMSUM: get_recommender(RowNormSum()),
+            NORM_MODE_DEGREE: get_recommender(DegreeNorm()),
+            NORM_MODE_TOTAL_REL: get_recommender(TotalRelevanceNorm()),
+            NORM_MODE_PROPORTIONAL_TOTAL_REL: get_recommender(ProportionalTotalRelevanceNorm()),
         }
 
     def recommend(self, client_data, limit=4):
@@ -144,7 +144,7 @@ class TaarLiteAppResource:
         _ = self._guid_rankings           # noqa
 
         addon_guid = client_data.get('guid')
-        normalize = client_data.get('normalize', NORM_MODE_ROWNORMSUM)
+        normalize = client_data.get('normalize', NORM_MODE_PROPORTIONAL_TOTAL_REL)
         if normalize not in self._recommenders:
             # Yield no results if the normalization method is not specified
             self.logger.warn("Invalid normalization parameter detected: [%s]" % normalize)
